@@ -1,41 +1,22 @@
 #!/usr/bin/python3
 
 """
-Last update: August 2020
-Credits to: Luigi D'Ascenzo, PhD - The Scripps Research Institute, La Jolla (CA)
-Contact info: dascenzo@scripps.edu
+Last update: March 2021
+Author: Luigi D'Ascenzo, PhD - The Scripps Research Institute, La Jolla (CA)
+Contact info: dascenzoluigi@gmail.com
+GitHub project repository: https://github.com/ldascenzo/pytheas
 
 ***DESCRIPTION***
-This script calculates the MS1/MS2 M/Z values for light and heavy fragments obtained after the consolidation step
-
-***ELEMENTAL MASSES***
-(1) http://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl?ele=&ascii=html&isotype=some
-(2) http://www.sisweb.com/referenc/source/exactmaa.htm
-
-Note that for each element with no specified isotope the mass of the most abundant isotope is used.
-In the case of O, C, H and N the most abundant isotope is >=99% abundant.
-S32 has 95% abundance
-Se80 has only 49% abundance, so you could consider adding multiple isotopes if working with Se
-
-***INFO ON RNA FRAGMENTATION***
-The scheme adopted to name the MS2 ions is the McLuckey scheme (McLuckey, Van Berkel and Glish, 1992),
-a view is proposed in the Scheme 1 of Schurch 2016 (https://doi.org/10.1002/mas.21442)
-Additionally, for each precursor ion (M) more ions are calculated:
-     1) Ion series 3'OH-y and 3'OH-z, identified for short as y-P and z-P
-     2) Neutral loss ions [M - nH - H2O]n, [M - nH - B]n, [M - nH - HPO3]n, [M - nH - H3PO4]n, [M - nH - HPO3 - B]n
-        with short id [M -  H2O]n, [M - B]n, [M - P]n, [M - H2O - P]n, [M - P - B]n
-     3) Charged loss ions  [M - nH - B-]n-1, [M - nH - PO3]n-1, [M - nH - H2PO4]n-1, [M - nH - PO3 - B]n-1
-        with short id [M - B-]n-1, [M - P-]n-1, [M - H2O - P-]n-1, [M - P- - B]n-1
-     4) Free bases [B]-
-
-Square brackets are omitted in the output for simplicity
+Final step of the Pytheas in silico digest library generation. m/z values for precursor ions and all the derived
+CID fragment ions are added to each target and decoy sequences. Isotopic labeling can be added via an additional
+nucleotides dictionary file. Charge tables for precursor ions and fragment ions (if different from the default) can
+also be provided.
+More information on the elemental masses, CID fragmentation of RNA and the available options/parameters can be found
+in the Digest section of Pytheas manual.
 
 ***OUTPUT***
-Digest_MS1.txt - text file in the script directory with lines organized by value headers:
-                M/Z_light M/Z_heavy Molecule Startres Endres Charge Miss Sequence Mod 3'chem 5'chem Num_copy Digest_loc
-Digest_MS2.txt - text file for MS2 output with lines organized by value headers:
-                 M/Z_parent_ion light/heavy Molecule Startres Endres Charge Miss Sequence Mod 3'chem 5'chem
-                 Num_copy Digest_loc Digest_loc CID_series_fragments(charge):m/z
+1) Digest_MS2.txt (or MS1 if requested) -> in silico digest library file ready to be used for matching, with all
+                 the info on each precursor ion and its derived fragmentation ions
 """
 
 import os
@@ -51,6 +32,10 @@ import consolidate_tools as ct
 # ELEMENT MASS DICTIONARY
 ##########
 """
+Masses from:
+(1) http://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl?ele=&ascii=html&isotype=some
+(2) http://www.sisweb.com/referenc/source/exactmaa.htm
+
 Note that for each element with no specified isotope the mass of the most abundant isotope is used. 
 In the case of O, C, H and N the most abundant isotope is >=99% abundant. 
 S32 has 95% abundance
@@ -74,12 +59,11 @@ class Masses:
 
     def __controls(self):
         """
-        Makes sure the right options with right values are assigned for the correct execution of the program
-        Also checks if the nucleotide dictionaries for light and heavy atoms are consistent with what used in the preceding
-        scripts
+        Make sure the right options with right values are assigned for the correct execution of the program
+        Also check if the nucleotide dictionaries for light and heavy atoms are consistent with what used in the
+        preceding steps
         """
-
-        # Checks the consistency of nucleotides alphabets between this scripts and the preceding ones for light atoms
+        # Check the consistency of nucleotides alphabets between this scripts and the preceding ones for light atoms
         df_light = self.read_excel_input(self.nts_alphabet_light)
 
         d = DictDiffer(read_csv(), dict(zip(df_light.ID, df_light.ID_ext)))
@@ -104,7 +88,7 @@ class Masses:
 
         if self.nts_alphabet_heavy:
 
-            # Checks the consistency of nucleotides alphabets between this scripts and the preceding ones for heavy
+            # Check the consistency of nucleotides alphabets between this scripts and the preceding ones for heavy
             # atoms
             df_heavy = self.read_excel_input(self.nts_alphabet_heavy)
 
@@ -130,7 +114,7 @@ class Masses:
 
     def read_excel_input(self, input_alphabet):
         """
-        Produces a dataframe with all the info on the nucleobases from the input file nts_alphabet_light
+        Generate a dataframe with all the info on the nucleotides from the input file nts_alphabet_light
         """
         # Checking that the nts_alphabet_light file given in argument exists
         if not os.path.exists(input_alphabet):
@@ -138,10 +122,10 @@ class Masses:
                 input_alphabet))
             sys.exit(1)
 
-        # Creates a dataframe with info from Excel spreadsheet
+        # Create a dataframe with info from Excel spreadsheet
         df = pd.read_excel(input_alphabet, header=12)
 
-        # Drops rows with NaN values
+        # Drop rows with NaN values
         df = df[pd.notnull(df['ID'])]
 
         # Transform all ID values in string (so numbers can be used as one letter code for bases)
@@ -151,7 +135,7 @@ class Masses:
 
     def lines_with_charge(self, input_lines):
         """
-        Writes new lines for each charged species
+        Write new lines for each precursor ion charged status
         """
         new_lines_charge, MS1_charges = [], charge_table(self.MS1_charges)
         MS1_maxlength, MS1_minlength = max(int(s) for s in MS1_charges.keys()), min(int(s) for s in MS1_charges.keys())
@@ -169,7 +153,7 @@ class Masses:
 
     def lines_final(self, input_lines, mzlow, mzhigh):
         """
-        Prepares the output lines with all the missing info
+        Prepare the final output lines
         """
         nts_light = nts_mass(self.read_excel_input(self.nts_alphabet_light))[0]
         output_lines = []
@@ -181,7 +165,7 @@ class Masses:
         for line in input_lines:
             h_mass, l_mass = 0, 0
 
-            # Adds the basic masses of the nucleotides (neutral state) present in the fragment
+            # Add the basic masses of the nucleotides (neutral state) present in the fragment
             for a in line.split()[5]:
                 l_mass, h_mass = l_mass + nts_light[a], h_mass + nts_heavy[a]
 
@@ -210,12 +194,12 @@ class Masses:
             elif line.split()[7] == "cP":
                 l_mass, h_mass = l_mass - ele_mass["O"] - ele_mass["H"], h_mass - ele_mass["O"] - ele_mass["H"]
 
-            # Adds the right amount of hydrogen atoms depending on the fragment charge (starting charge is 0 by default)
+            # Add the right amount of hydrogen atoms depending on the fragment charge (starting charge is 0 by default)
             if self.ion_mode == "+":
                 l_mass, h_mass = l_mass + ele_mass["H"] * (int(line.split()[3][1])), h_mass + ele_mass["H"] * (
                     int(line.split()[3][1]))
 
-            # Subtracts the right amount of hydrogen atoms depending on the fragment charge
+            # Subtract the right amount of hydrogen atoms depending on the fragment charge
             # (starting charge is 0 by default)
             if self.ion_mode == "-":
                 l_mass, h_mass = l_mass - ele_mass["H"] * (int(line.split()[3][1])), h_mass - ele_mass["H"] * (
@@ -236,7 +220,7 @@ class Masses:
 
     def header_info_MS1(self, input_file):
         """
-        Writes the header for the output file
+        Write the header section for the MS1 output file
         """
         header_lines = []
 
@@ -248,8 +232,6 @@ class Masses:
 
         header_lines.append("#MZLOW_MS1 " + str(self.MS1_mzlow) + "\n")
         header_lines.append("#MZHIGH_MS1 " + str(self.MS1_mzhigh) + "\n")
-        header_lines.append("#MINCHARGE_MS1 " + str(MS1_minz) + "\n")
-        header_lines.append("#MAXCHARGE_MS1 " + str(MS1_z) + "\n")
         header_lines.append("#NTS_ALPHABET_LIGHT " + str(self.nts_alphabet_light) + "\n")
 
         if self.nts_alphabet_heavy:
@@ -261,17 +243,18 @@ class Masses:
                 header_lines.append(line)
 
         header_lines.append(
-            "M/Z_light M/Z_heavy Molecule Startres Endres Charge Miss Sequence Mod 3'chem 5'chem Num_copy Digest_loc\n")
+            "m/z_light m/z_heavy molecule residue_start residue_end charge miss sequence sequence_mod 3'end 5'end "
+            "num_copy sequence_location\n")
 
         return header_lines
 
     def fragment_MS2_masses(self, line, MS2_charge_dic, nts_dic_heavy):
         """
-        Calculates the masses of all the fragments filtered for MS2 analysis
+        Calculate the masses of CID derived fragment ions
         """
         nts_dic_light = nts_mass(self.read_excel_input(self.nts_alphabet_light))[0]
         output_masses, charge_prec, mass_prec = [], int(line.split()[5][1:]), np.float64(line.split()[0])
-        chem3prime, chem5prime = line.split()[9], line.split()[10]
+        chem3prime, chem5prime = line.split()[10], line.split()[9]
 
         # Correction to the charges for charged losses
         charged_loss = charge_prec - 1
@@ -287,33 +270,33 @@ class Masses:
             # Subtract two protons in positive mode when a positive charge is lost due to charged loss
             charge_correction = - 2 * ele_mass['H']
 
-        # Adds the ion M-H2O as first entry of the MS2 ions list
+        # Add the ion M-H2O as first entry of the MS2 ions list
         MH2O_mz = mass_prec + (self.dic_M_x_series['M-H2O']) / charge_prec
 
-        # If m/z is in the given interval for MS2, result is printed6
+        # Keep the ion if its m/z is in the given interval for MS2 ions
         if self.MS2_mzhigh >= MH2O_mz >= self.MS2_mzlow:
             output_masses.append('M-H2O({}):{}'.format(line.split()[5], str(round_masses(MH2O_mz))))
 
         if chem3prime == 'P' or chem5prime == 'P':
-            # Adds the neutral phosphate loss ions M-PO3H and M-PO4H3 to the MS2 list if 3' end is P or OH
+            # Add the neutral phosphate loss ions M-PO3H and M-PO4H3 to the MS2 list if 3' end is P or OH
             MPO3H_mz = mass_prec + (self.dic_M_x_series['M-PO3H']) / charge_prec
 
-            # If m/z is in the given interval for MS2, result is printed
+            # Keep the ion if its m/z is in the given interval for MS2 ions
             if self.MS2_mzhigh >= MPO3H_mz >= self.MS2_mzlow:
                 output_masses.append('M-P({}):{}'.format(line.split()[5], str(round_masses(MPO3H_mz))))
 
             MPO4H3_mz = mass_prec + (self.dic_M_x_series['M-PO4H3']) / charge_prec
 
-            # If m/z is in the given interval for MS2, result is printed
+            # Keep the ion if its m/z is in the given interval for MS2 ions
             if self.MS2_mzhigh >= MPO4H3_mz >= self.MS2_mzlow:
                 output_masses.append('M-H2O-P({}):{}'.format(line.split()[5], str(round_masses(MPO4H3_mz))))
 
-            # Adds the charged phosphate loss ions M-PO3- and M-PO4H2- to the MS2 list
+            # Add the charged phosphate loss ions M-PO3- and M-PO4H2- to the MS2 list
             # if 3' end is P and if the precursor has a charge greater than 1
             if charge_prec > 1:
                 MPO3_mz = (mass_prec * charge_prec + self.dic_M_x_series['M-PO3'] + charge_correction) / charged_loss
 
-                # If m/z is in the given interval for MS2, result is printed
+                # Keep the ion if its m/z is in the given interval for MS2 ions
                 if self.MS2_mzhigh >= MPO3_mz >= self.MS2_mzlow:
                     output_masses.append(
                         'M-P({}):{}'.format(line.split()[5][0] + str(charged_loss), str(round_masses(MPO3_mz))))
@@ -321,22 +304,22 @@ class Masses:
                 MPO4H2_mz = (mass_prec * charge_prec + self.dic_M_x_series['M-PO4H2'] +
                              charge_correction) / charged_loss
 
-                # If m/z is in the given interval for MS2, result is printed
+                # Keep the ion if its m/z is in the given interval for MS2 ions
                 if self.MS2_mzhigh >= MPO4H2_mz >= self.MS2_mzlow:
                     output_masses.append(
                         'M-H2O-P({}):{}'.format(line.split()[5][0] + str(charged_loss), str(round_masses(MPO4H2_mz))))
 
         elif chem3prime == 'cP':
-            # Adds the charged phosphate loss ions M-PO3-  to the MS2 list
+            # Add the charged phosphate loss ions M-PO3- to the MS2 list
             # if 3' end is cP and if the precursor has a charge greater than 1
             if charge_prec > 1:
                 MPO3_mz = (mass_prec * charge_prec + self.dic_M_x_series['M-PO3'] + charge_correction) / charged_loss
-                # If m/z is in the given interval for MS2, result is printed
+                # Keep the ion if its m/z is in the given interval for MS2 ions
                 if self.MS2_mzhigh >= MPO3_mz >= self.MS2_mzlow:
                     output_masses.append(
                         'M-P({}):{}'.format(line.split()[5][0] + str(charged_loss), str(round_masses(MPO3_mz))))
 
-        # Adds the free bases B- ions and M-B-/M-BH/M-P-B to the MS2 list
+        # Add the free bases B- ions and M-B-/M-BH/M-P-B to the MS2 list
         unique_seq = set(list(line.split()[7]))
         last_nt = list(line.split()[7])[-1]
 
@@ -353,7 +336,7 @@ class Masses:
                     MB_mz = (np.float64(line.split()[0]) * charge_prec + charge_correction - self.nts_dic_onlyB_light[
                         b]) / charged_loss
 
-                    # If m/z is in the given interval for MS2, result is printed
+                    # Keep the ion if its m/z is in the given interval for MS2 ions
                     if self.MS2_mzhigh >= MB_mz >= self.MS2_mzlow:
                         output_string = 'M-{}({}):{}'.format(b, line.split()[5][0] + str(charged_loss),
                                                              str(round_masses(MB_mz)))
@@ -365,7 +348,7 @@ class Masses:
                         MBP_mz = (np.float64(line.split()[0]) * charge_prec + charge_correction -
                                   self.nts_dic_onlyB_light[b] + self.dic_M_x_series['M-PO3H']) / charged_loss
 
-                        # If m/z is in the given interval for MS2, result is printed
+                        # Keep the ion if its m/z is in the given interval for MS2 ions
                         if self.MS2_mzhigh >= MBP_mz >= self.MS2_mzlow:
                             output_string = 'M-P-{}({}):{}'.format(b, line.split()[5][0] + str(charged_loss),
                                                                    str(round_masses(MBP_mz)))
@@ -377,7 +360,7 @@ class Masses:
                         MBP_mz = (np.float64(line.split()[0]) * charge_prec + charge_correction -
                                   self.nts_dic_onlyB_light[last_nt] + self.dic_M_x_series['M-PO3H']) / charged_loss
 
-                        # If m/z is in the given interval for MS2, result is printed
+                        # Keep the ion if its m/z is in the given interval for MS2 ions
                         if self.MS2_mzhigh >= MBP_mz >= self.MS2_mzlow:
                             output_string = 'M-P-{}({}):{}'.format(last_nt, line.split()[5][0] + str(charged_loss),
                                                                    str(round_masses(MBP_mz)))
@@ -389,7 +372,7 @@ class Masses:
                             MBB_mz = (np.float64(line.split()[0]) * charge_prec + charge_correction -
                                       self.nts_dic_onlyB_light[b] - self.nts_dic_onlyB_light[last_nt]) / charged_loss
 
-                            # If m/z is in the given interval for MS2, result is printed
+                            # Keep the ion if its m/z is in the given interval for MS2 ions
                             if self.MS2_mzhigh >= MBB_mz >= self.MS2_mzlow:
                                 output_string = 'M-{}-{}({}):{}'.format(b, last_nt, line.split()[5][0] +
                                                                         str(charged_loss), str(round_masses(MBB_mz)))
@@ -399,7 +382,7 @@ class Masses:
                 # The neutral base loss ion M-B is generated for all the precursor ions
                 MBH_mz = np.float64(line.split()[0]) - (self.nts_dic_onlyB_light[b] + ele_mass["H"]) / charge_prec
 
-                # If m/z is in the given interval for MS2, result is printed
+                # Keep the ion if its m/z is in the given interval for MS2 ions
                 if self.MS2_mzhigh >= MBH_mz >= self.MS2_mzlow:
                     output_masses.append('M-{}({}):{}'.format(b, line.split()[5], str(round_masses(MBH_mz))))
 
@@ -408,7 +391,7 @@ class Masses:
                     MBHP_mz = np.float64(line.split()[0]) - (
                             self.nts_dic_onlyB_light[b] + ele_mass["H"] - self.dic_M_x_series['M-PO3H']) / charge_prec
 
-                    # If m/z is in the given interval for MS2, result is printed
+                    # Keep the ion if its m/z is in the given interval for MS2 ions
                     if self.MS2_mzhigh >= MBHP_mz >= self.MS2_mzlow:
                         output_string = 'M-P-{}({}):{}'.format(b, line.split()[5], str(round_masses(MBHP_mz)))
                         if output_string not in output_masses:
@@ -417,10 +400,10 @@ class Masses:
                 elif chem3prime == 'cP':
                     # Add the special case of base double loss (with one being the 3'end base) for cP 3' chemistry
                     if b in line.split()[7][:-1]:
-                        MBHBH_mz = np.float64(line.split()[0]) - (self.nts_dic_onlyB_light[b] + 2 * ele_mass["H"] +
+                        MBHBH_mz = np.float64(line.split()[0]) - (self.nts_dic_onlyB_light[b] + ele_mass["H"] +
                                                                   self.nts_dic_onlyB_light[last_nt]) / charge_prec
 
-                        # If m/z is in the given interval for MS2, result is printed
+                        # Keep the ion if its m/z is in the given interval for MS2 ions
                         if self.MS2_mzhigh >= MBHBH_mz >= self.MS2_mzlow:
                             output_string = 'M-{}-{}({}):{}'.format(b, last_nt, line.split()[5],
                                                                     str(round_masses(MBHBH_mz)))
@@ -436,7 +419,7 @@ class Masses:
                     MBh_mz = (np.float64(line.split()[0]) * charge_prec + charge_correction - self.nts_dic_onlyB_heavy[
                         b]) / charged_loss
 
-                    # If m/z is in the given interval for MS2, result is printed
+                    # Keep the ion if its m/z is in the given interval for MS2 ions
                     if self.MS2_mzhigh >= MBh_mz >= self.MS2_mzlow:
                         output_string = 'M-{}({}):{}'.format(b, line.split()[5][0] + str(charged_loss),
                                                              str(round_masses(MBh_mz)))
@@ -448,7 +431,7 @@ class Masses:
                         MBPh_mz = (np.float64(line.split()[0]) * charge_prec + charge_correction -
                                    self.nts_dic_onlyB_heavy[b] + self.dic_M_x_series['M-PO3H']) / charged_loss
 
-                        # If m/z is in the given interval for MS2, result is printed
+                        # Keep the ion if its m/z is in the given interval for MS2 ions
                         if self.MS2_mzhigh >= MBPh_mz >= self.MS2_mzlow:
                             output_string = 'M-P-{}({}):{}'.format(b, line.split()[5][0] + str(charged_loss),
                                                                    str(round_masses(MBPh_mz)))
@@ -460,7 +443,7 @@ class Masses:
                         MBPh_mz = (np.float64(line.split()[0]) * charge_prec + charge_correction -
                                    self.nts_dic_onlyB_heavy[last_nt] + self.dic_M_x_series['M-PO3H']) / charged_loss
 
-                        # If m/z is in the given interval for MS2, result is printed
+                        # Keep the ion if its m/z is in the given interval for MS2 ions
                         if self.MS2_mzhigh >= MBPh_mz >= self.MS2_mzlow:
                             output_string = 'M-P-{}({}):{}'.format(last_nt, line.split()[5][0] + str(charged_loss),
                                                                    str(round_masses(MBPh_mz)))
@@ -472,7 +455,7 @@ class Masses:
                             MBBh_mz = (np.float64(line.split()[0]) * charge_prec + charge_correction -
                                        self.nts_dic_onlyB_heavy[b] - self.nts_dic_onlyB_heavy[last_nt]) / charged_loss
 
-                            # If m/z is in the given interval for MS2, result is printed
+                            # Keep the ion if its m/z is in the given interval for MS2 ions
                             if self.MS2_mzhigh >= MBBh_mz >= self.MS2_mzlow:
                                 output_string = 'M-{}-{}({}):{}'.format(b, last_nt, line.split()[5][0] +
                                                                         str(charged_loss), str(round_masses(MBBh_mz)))
@@ -482,7 +465,7 @@ class Masses:
                 MBHh_mz = np.float64(line.split()[0]) - (
                         self.nts_dic_onlyB_heavy[b] + ele_mass["H"]) / charge_prec
 
-                # If m/z is in the given interval for MS2, result is printed
+                # Keep the ion if its m/z is in the given interval for MS2 ions
                 if self.MS2_mzhigh >= MBHh_mz >= self.MS2_mzlow:
                     output_string = 'M-{}({}):{}'.format(b, line.split()[5], str(round_masses(MBHh_mz)))
                     if output_string not in output_masses:
@@ -493,7 +476,7 @@ class Masses:
                     MBHPh_mz = np.float64(line.split()[0]) - (self.nts_dic_onlyB_heavy[b] + ele_mass["H"] -
                                                               self.dic_M_x_series['M-PO3H']) / charge_prec
 
-                    # If m/z is in the given interval for MS2, result is printed
+                    # Keep the ion if its m/z is in the given interval for MS2 ions
                     if self.MS2_mzhigh >= MBHPh_mz >= self.MS2_mzlow:
                         output_string = 'M-P-{}({}):{}'.format(b, line.split()[5], str(round_masses(MBHPh_mz)))
                         if output_string not in output_masses:
@@ -502,33 +485,33 @@ class Masses:
                 elif chem3prime == 'cP':
                     # Add the special case of base double loss (with one being the 3'end base) for cP 3' chemistry
                     if b in line.split()[7][:-1]:
-                        MBHBHh_mz = np.float64(line.split()[0]) - (self.nts_dic_onlyB_heavy[b] + 2 * ele_mass["H"] +
+                        MBHBHh_mz = np.float64(line.split()[0]) - (self.nts_dic_onlyB_heavy[b] + ele_mass["H"] +
                                                                    self.nts_dic_onlyB_heavy[last_nt]) / charge_prec
 
-                        # If m/z is in the given interval for MS2, result is printed
+                        # Keep the ion if its m/z is in the given interval for MS2 ions
                         if self.MS2_mzhigh >= MBHBHh_mz >= self.MS2_mzlow:
                             output_string = 'M-{}-{}({}):{}'.format(b, last_nt, line.split()[5],
                                                                     str(round_masses(MBHBHh_mz)))
                             if output_string not in output_masses:
                                 output_masses.append(output_string)
 
-        # Cycles through all the CID series to output the MS2 ion masses
+        # Loop through all the CID series to output the sequence-defining fragment ion masses
         for ion in list(set(self.CID_series)):
             sequence = list(line.split()[7])
 
-            # If a ion from a,a-B, b,c or d has to be calculated, the fragment sequence is read from
+            # If a ion from a,a-B, b,c or d series has to be calculated, the fragment sequence is read from
             # first to last nucleotide
             if ion == "a" or ion == "a-B" or ion == "b" or ion == "c" or ion == "d":
                 sequence = sequence
 
-            # If a ion different from a,a-B, b,c or d has to be calculated, the fragment sequence is read from
+            # If a ion different from a,a-B, b,c or d series has to be calculated, the fragment sequence is read from
             # last to first nucleotide
             else:
                 sequence = list(reversed(sequence))
 
             for i in range(1, len(sequence)):
 
-                # Keeps only MS2 fragments with length within specified input (charges_MS2)
+                # Keep only MS2 fragments with length within the specified input (charges_MS2)
                 if str(i) in MS2_charge_dic.keys():
 
                     mass_fragment, mass_fragment_3OH = 0, 0
@@ -540,7 +523,7 @@ class Masses:
                         if line.split()[1] == "light":
                             mass_fragment += nts_dic_light[nt]
 
-                        # Add the masses for heavy nts
+                        # Add the masses for isotopically labeled heavy nts
                         else:
                             mass_fragment += nts_dic_heavy[nt]
 
@@ -577,11 +560,11 @@ class Masses:
 
                         # Edit the mass of the ion based on the 5' end
                         # Add the 5'-OH end mass to the fragment
-                        if line.split()[10] == "OH":
+                        if chem5prime == "OH":
                             mass_fragment += ele_mass["O"] + ele_mass["H"]
 
                         # Add the 5'-P end mass to the fragment
-                        if line.split()[10] == "P":
+                        if chem5prime == "P":
                             mass_fragment += ele_mass["O"] * 4 + ele_mass["H"] * 2 + ele_mass["P"]
 
                     else:
@@ -594,7 +577,7 @@ class Masses:
                         elif chem3prime == "P":
                             mass_fragment += ele_mass["H"]
 
-                            # Adds 3'OH-y and 3'-OH-z ions in case the 3' end is P
+                            # Add 3'OH-y and 3'-OH-z ions in case the 3' end is P
                             if ion == "y-P" or ion == "z-P":
                                 mass_fragment_3OH = mass_fragment + self.dic_CID_series_masses[ion]
 
@@ -608,7 +591,7 @@ class Masses:
                         # Sanity check to exclude MS2 ions with charges larger than the precursor
                         if int(char) <= charge_prec:
 
-                            # Adds the right amount of hydrogen atoms depending on the fragment charge
+                            # Add the right amount of hydrogen atoms depending on the fragment charge
                             # (starting charge is 0 by default)
                             if self.ion_mode == "+":
                                 mass_charged = mass_fragment + ele_mass["H"] * int(char)
@@ -632,11 +615,11 @@ class Masses:
                             else:
                                 mz_fragment_3OH = 0
 
-                            # If m/z is in the given interval for MS2, result is printed
+                            # Keep the ion if its m/z is in the given interval for MS2 ions
                             if self.MS2_mzhigh >= mz_fragment >= self.MS2_mzlow and \
                                     ion != "y-P" and ion != "z-P":
 
-                                # Print the a-B series with the number after the a
+                                # Output the a-B series with the number after the a
                                 if ion != 'a-B':
                                     output_masses.append(ion + str(i) + "(" + self.ion_mode + str(char) + "):" + str(
                                         round_masses(mz_fragment)))
@@ -648,7 +631,7 @@ class Masses:
 
                             if self.MS2_mzhigh >= mz_fragment_3OH >= self.MS2_mzlow:
 
-                                # Print the a-B series with the number after the a
+                                # Output the a-B series with the number after the a
                                 if ion != 'a-B' and ion != 'y-P' and ion != 'z-P':
                                     output_masses.append(ion + str(i) + "(" + self.ion_mode + str(char) + "):" + str(
                                         round_masses(mz_fragment_3OH)))
@@ -662,15 +645,15 @@ class Masses:
 
     def final_lines_MS2(self, lines_MS2):
         """
-        Adds the info of MS2 fragments m/z to the final lines for the output
+        Add the m/z of fragments ions to the final lines for the output
         """
         output_lines = []
 
-        # Defines two variables to keep track of the number of unique sequences of targets and decoys
+        # Define two variables to keep track of the number of unique sequences of targets and decoys
         global tot_targets
-        tot_targets = []
+        tot_targets = 0
         global tot_decoys
-        tot_decoys = []
+        tot_decoys = 0
 
         if self.nts_alphabet_heavy:
             nts_dic_heavy = nts_mass(self.read_excel_input(self.nts_alphabet_heavy))[0]
@@ -682,21 +665,19 @@ class Masses:
                 " ".join(line.split() + self.fragment_MS2_masses(line, self.MS2_charge_table, nts_dic_heavy) +
                          list("\n")))
 
-            # Add the targets and decoys to the respective lists
+            # Add the targets and decoys to the respective counters
             split = line.split()
             if 'decoy' in split[2]:
-                if '{}{}{}{}'.format(split[10], split[7], split[9], split[1]) not in tot_decoys:
-                    tot_decoys.append('{}{}{}{}'.format(split[10], split[7], split[9], split[1]))
+                tot_decoys += 1
 
             else:
-                if '{}{}{}{}'.format(split[10], split[7], split[9], split[1]) not in tot_targets:
-                    tot_targets.append('{}{}{}{}'.format(split[10], split[7], split[9], split[1]))
+                tot_targets += 1
 
         return output_lines
 
     def header_info_MS2(self, input_file):
         """
-        Creates the header for the output file
+        Create the header for the output file
         """
         header_lines = []
 
@@ -711,9 +692,6 @@ class Masses:
         header_lines.append("#MZHIGH_MS2 " + str(self.MS2_mzhigh) + "\n")
         header_lines.append("#MZLOW_MS1 " + str(self.MS1_mzlow) + "\n")
         header_lines.append("#MZHIGH_MS1 " + str(self.MS1_mzhigh) + "\n")
-        header_lines.append("#MAXCHARGE_MS2 " + str(MS2_z) + "\n")
-        header_lines.append("#MINCHARGE_MS1 " + str(MS1_minz) + "\n")
-        header_lines.append("#MAXCHARGE_MS1 " + str(MS1_z) + "\n")
         header_lines.append("#NTS_ALPHABET_LIGHT " + str(self.nts_alphabet_light) + "\n")
 
         if self.nts_alphabet_heavy:
@@ -731,72 +709,62 @@ class Masses:
                 header_lines.append(line)
 
         header_lines.append(
-            "M/Z_precursor_ion light/heavy Molecule Startres Endres Charge Miss Sequence "
-            "Mod 3'chem 5'chem Num_copy Digest_loc CID_series_fragments(charge):m/z\n")
+            "m/z isotope molecule_ID residue_start residue_end charge miss sequence "
+            "sequence_mod 5'end 3'end num_copy sequence_location CID_series_fragment(charge):m/z\n")
 
         return header_lines
 
     def final_output(self):
-        # Controls if options are correctly given and if there are differences
+        """
+        Create the MS1 output file
+        """
+        # Control if options are correctly given and if there are differences
         # between nts dictionaries specified here and in previous scripts
         self.__controls()
         out_files = []
 
-        """
-        Inputs the output lines inside the output files
-        """
         if os.path.exists("./output.3.MS1"):
-
             charge_table(self.MS1_charges)
-            # Writes all the lines inside the standard output file "Digest_MS1"
+            # Write all the lines inside the standard output file "Digest_MS1"
             open("./Digest_MS1.txt", 'w').writelines(
                 self.header_info_MS1(open("./output.3.MS1", 'r')) +
                 self.lines_final(self.lines_with_charge(lines_with_chemistry(inlines_MS1(open("./output.3.MS1", 'r')))),
                                  self.MS1_mzlow, self.MS1_mzhigh))
             out_files.append("Digest_MS1.txt")
 
-        else:
-            # print("WARNING! MS1 file output.3.MS1 from 3_consolidate.py is missing, MS1 digest will not be generated")
-            pass
-
         ################################# MS2 SPECIFIC WORKFLOW #############################################
         """
         This part is executed only under the condition that the file output.3.MS2 is present in the directory
         """
 
-        if os.path.exists("./output.3.MS2"):  # Checking if the input file output.3.MS2 is present
-            """
-            Creates two new dictionaries for a-B fragments (nucleobases)
-            """
+        if os.path.exists("./output.3.MS2"):
+            # Create two new dictionaries for a-B fragments (nucleobases)
             self.nts_dic_onlyB_light = nts_mass(self.read_excel_input(self.nts_alphabet_light))[1]
+            
             if self.nts_alphabet_heavy:
                 self.nts_dic_onlyB_heavy = nts_mass(self.read_excel_input(self.nts_alphabet_heavy))[1]
 
-            """
-            Filters the lines from the input file
-            """
             lines_MS2 = []
 
             for line in self.lines_final(self.lines_with_charge(lines_with_chemistry(inlines_MS2())), self.MS1_mzlow,
                                          self.MS1_mzhigh):
 
+                split = line.split()
                 # Only fragments longer than the specified cutoff for MS2 ions are kept
-                if len(line.split()[7]) >= min_length_MS2:
+                if len(split[7]) >= min_length_MS2:
 
                     # Only fragments with m/z in specified MS1 interval are considered
-                    if np.float64(line.split()[0]) <= self.MS1_mzhigh and np.float64(line.split()[
-                                                                                         0]) >= self.MS1_mzlow:
-                        lines_MS2.append(line.split()[0] + " light " + " ".join(line.split()[2:]))
+                    if self.MS1_mzhigh >= np.float64(split[0]) >= self.MS1_mzlow:
+                        lines_MS2.append("{} {} {} {} {} {}".format(split[0], 'light', " ".join(split[2:9]), split[10],
+                                                                    split[9], " ".join(split[11:])))
 
                     if self.nts_alphabet_heavy:
-                        if self.MS1_mzhigh >= np.float64(line.split()[1]) >= self.MS1_mzlow:
-                            lines_MS2.append(line.split()[1] + " heavy " + " ".join(line.split()[2:]))
+                        if self.MS1_mzhigh >= np.float64(split[1]) >= self.MS1_mzlow:
+                            lines_MS2.append("{} {} {} {} {} {}".format(split[1], 'heavy', " ".join(split[2:9]),
+                                                                        split[10], split[9], " ".join(split[11:])))
 
-            """
-            Determines a dictionary with the amount of masses to subtract (-) or add (+) to nts for the corresponding 
-            type of CID ion 
-            The difference is compared to a nt in neutral state within a chain, no 3' or 5' ends
-            """
+            # Determine a dictionary with the amount of masses to subtract (-) or add (+) to nts for the corresponding
+            # type of CID ion. The difference is compared to a nt in neutral state within a chain, no 3' or 5' ends
             self.dic_CID_series_masses = {"a": -(ele_mass["P"] + ele_mass["O"] * 4 + ele_mass["H"] * 2),
                                           "a-B": -(ele_mass["P"] + ele_mass["O"] * 4 + ele_mass["H"] * 3),
                                           "b": -(ele_mass["P"] + ele_mass["O"] * 3),
@@ -807,10 +775,8 @@ class Masses:
                                           "z-P": -(ele_mass["H"] + ele_mass["P"] + ele_mass["O"] * 3),
                                           "y-P": -(ele_mass["H"] + ele_mass["P"] + ele_mass["O"] * 3)}
 
-            """
-            Determines a dictionary with the amount of masses to subtract (-) or add (+) to precursor ions (M) to 
-            obtain the "M-xx" series
-            """
+            # Determine a dictionary with the amount of masses to subtract (-) or add (+) to precursor ions (M) to
+            # obtain the "M-xx" series
             self.dic_M_x_series = {"M-H2O": -(ele_mass["H"] * 2 + ele_mass["O"]),
                                    "M-PO3H": -(ele_mass["O"] * 3 + ele_mass["P"] + ele_mass["H"]),
                                    "M-PO4H3": -(ele_mass["P"] + ele_mass["O"] * 4 + ele_mass["H"] * 3),
@@ -819,13 +785,11 @@ class Masses:
 
             self.MS2_charge_table = charge_table(self.MS2_charges)
 
-            """
-            Writes the output lines in the output file Digest_MS2.txt
-            """
+            # Write the output lines in the output file Digest_MS2.txt
             body_output = self.final_lines_MS2(lines_MS2)
 
-            # Adds the info on unique sequences and decoys in the header
-            final_header = (["#TARGETS {}\n#DECOYS {}\n".format(len(tot_targets), len(tot_decoys))]
+            # Add the info on unique sequences and decoys in the header
+            final_header = (["#TARGETS {}\n#DECOYS {}\n".format(tot_targets, tot_decoys)]
                             + self.header_info_MS2(open(os.getcwd() + "/output.3.MS2", 'r')))
 
             open(os.getcwd() + "/Digest_MS2.txt", 'w').writelines(final_header + body_output)
@@ -834,8 +798,8 @@ class Masses:
         else:
             print("WARNING! MS2 file output.3.MS2 from 3_consolidate.py is missing, MS2 digest will not be calculated")
 
-            # m/z based consolidation, where nucleotides that in a particular alphabet are too close
-            # in masses ppm to be indistinguishable in the matching, are reported as 'X' within their sequence
+        # m/z based consolidation, where nucleotides that in a particular alphabet are too close
+        # in masses ppm to be indistinguishable in the matching, are reported as 'X' within their sequence
         if self.mz_consolidation:
             digest_lines = ct.mz_consolidate(self.nts_alphabet_light, 'Digest_MS2.txt', 'light',
                                              self.MS1_consolidation_ppm,
@@ -892,7 +856,7 @@ class DictDiffer(object):
 
 def ppm_range(value, difference):
     """
-    Calculates incertitude on MS1/MS2 masses equivalent to given ppms
+    Calculate incertitude on MS1/MS2 masses equivalent to given ppms
     """
     return difference * 1000000 / value
 
@@ -909,7 +873,7 @@ def round_masses(mass):
 
 def read_csv(input_csv='nts_light.csv'):
     """
-    Produces a dictionary nts_alphabet
+    Produce a dictionary nts_alphabet
     mod_alphabet contains all ID : ID_ext couples, thus the one letter and extended codes for each nucleobase
     """
     if not os.path.exists(input_csv):
@@ -922,7 +886,7 @@ def read_csv(input_csv='nts_light.csv'):
         # Read the csv file with the nucleotides dictionary
         df = pd.read_csv(input_csv, usecols=['ID', 'ID_ext'])
 
-        # Drops rows with NaN values
+        # Drop rows with NaN values
         df = df[pd.notnull(df['ID'])]
 
         return dict(zip(df.ID, df.ID_ext))
@@ -930,12 +894,12 @@ def read_csv(input_csv='nts_light.csv'):
 
 def nts_mass(df):
     """
-    Creates a dictionary with the masses of all nts based on their atomic composition
+    Create a dictionary with the masses of all nts based on their atomic composition
     """
     mass_nts, mass_base, mass_backbone = {}, {}, {}
 
     for index, row in df.iterrows():
-        # Calculates mass of the base only
+        # Calculate mass of the base only
         mass_b = (np.float64(row['C']) * ele_mass["C"] + np.float64(row['O']) * ele_mass["O"] + np.float64(
             row['H']) *
                   ele_mass["H"] + np.float64(row['N']) * ele_mass["N"] +
@@ -964,9 +928,9 @@ def nts_mass(df):
     return mass_nts, mass_base, mass_backbone
 
 
-def inlines_MS1(input_file):  # Puts the lines from input file output.3.MS1 in a list
+def inlines_MS1(input_file):
     """
-    Reads the input file for MS1 (output.3.MS1)
+    Read the input file for MS1 (output.3.MS1)
     """
     input_lines = []
 
@@ -982,7 +946,7 @@ def inlines_MS1(input_file):  # Puts the lines from input file output.3.MS1 in a
 
 def reorganize_lines(line):
     """
-    Prepares the elements on the lines to be compatible with the final output
+    Order the precursor ion field
     """
     split = line.split()
     new_line = "{} {} {} {} {} {} {} {} {} {}".format(split[-3], split[-2], split[-1], split[2], split[0], split[1],
@@ -992,7 +956,7 @@ def reorganize_lines(line):
 
 def lines_with_chemistry(input_lines):
     """
-    Prepares lines for the output lines including 3' and 5' chemistry
+    Prepare lines for the output lines including 3' and 5' chemistry
     """
     new_lines = []
 
@@ -1004,7 +968,7 @@ def lines_with_chemistry(input_lines):
 
 def add_charge(line, charge):
     """
-    Adds information on the charge to the output lines
+    Add information on the charge to the output lines
     """
     new_line = "{} {} {}".format(" ".join(line.split()[:3]), charge, " ".join(line.split()[3:]))
 
@@ -1013,7 +977,7 @@ def add_charge(line, charge):
 
 def charge_table(input_file):
     """
-    Creates a dictionary with the charge table for MS1/MS2 ions
+    Create a dictionary with the charge table for MS1/MS2 ions
     """
     charges_dic = {}
 
@@ -1029,13 +993,13 @@ def charge_table(input_file):
                         charges_dic[line.split()[0]].append(ele)
 
     if 'MS1' in input_file or 'ms1' in input_file:
-        # Defines the window for charges on all MS1 fragments, derived from the input charge table file
+        # Define the window for charges on all MS1 fragments, derived from the input charge table file
         global MS1_minz, MS1_z
         MS1_minz, MS1_z = min(int(s) for s in min(charges_dic.items(), key=lambda x: x[1])[1]), max(
             int(s) for s in max(charges_dic.items(), key=lambda x: x[1])[1])
 
     elif 'MS2' in input_file or 'ms2' in input_file:
-        # Defines the window for charges on all MS2 fragments, derived from the input charge table file
+        # Define the window for charges on all MS2 fragments, derived from the input charge table file
         global MS2_minz, MS2_z
         MS2_minz, MS2_z = min(int(s) for s in min(charges_dic.items(), key=lambda x: x[1])[1]), max(
             int(s) for s in max(charges_dic.items(), key=lambda x: x[1])[1])
@@ -1045,7 +1009,7 @@ def charge_table(input_file):
 
 def add_masses(line, mass_light, mass_heavy):
     """
-    Adds information about masses in the output lines
+    Add m/z information in the output lines
     """
     new_line = "{} {} {}\n".format(round_masses(mass_light), round_masses(mass_heavy), line)
 
@@ -1054,7 +1018,7 @@ def add_masses(line, mass_light, mass_heavy):
 
 def inlines_MS2():
     """
-    Reads the line from the input file for MS2
+    Read the line from the input file for MS2
     """
     input_file = open("./output.3.MS2", 'r')
     input_lines = []

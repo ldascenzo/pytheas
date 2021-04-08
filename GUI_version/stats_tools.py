@@ -1,9 +1,14 @@
 #!/usr/bin/python3
 
 """
-Last update: December 2020
-Credits to: Luigi D'Ascenzo, PhD - The Scripps Research Institute, La Jolla (CA)
-Contact info: dascenzo@scripps.edu
+Last update: April 2021
+Author: Luigi D'Ascenzo, PhD - The Scripps Research Institute, La Jolla (CA)
+Contact info: dascenzoluigi@gmail.com
+GitHub project repository: https://github.com/ldascenzo/pytheas
+
+***DESCRIPTION***
+A collection of tools used for FDR estimation, generation of the targets and decoys output files and
+the generation of the statistical plots in the Pytheas workflow
 """
 
 import sys, os, re
@@ -14,22 +19,21 @@ import statistics
 
 np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 
+
 def read_excel_input(nts_file):
     """
-     Produces a dataframe with all the info on the nucleobases from the input file nts_alphabet_light
+     Produce a dataframe with all the info on the nucleobases from the input file nts_alphabet_light
      """
     # Checking that the nts_alphabet_light file given in argument exists
     if not os.path.exists(nts_file):
-        print("ERROR! File " + nts_file + " does not exist. Execution terminated without generating any output")
+        print("ERROR! File " + nts_file + " does not exist. Execution terminated without generating any output."
+                                          "This file is generated during the Pytheas in silico digestion")
         sys.exit(1)
 
-    # Creates a dataframe with info from Excel spreadsheet
+    # Create a dataframe with info from Excel spreadsheet
     df = pd.read_excel(nts_file, sheet_name=[0, 1], header=0)
 
-    # Drops rows with NaN values
-    # df = df[pd.notnull(df['length'])]
-
-    # Drops rows with additional legend indications
+    # Drop rows with additional legend indications
     df[0] = df[0][df[0].length != 'l']
     df[1] = df[1][df[1].length != 'l']
 
@@ -46,16 +50,16 @@ def input_data(infile, excel, sumi_all):
     """
     # Define a dictionary with all the column to be included in the dataframe
     if sumi_all == 'n':
-        d = {'M': [], 'RT': [], 'M_RT': [], 'rank': [], 'Theo_mono_M': [], 'isotopologue': [], 'nts': [], 'Sp': [],
-             'dSp': [], 'n': [], 'sumI': [], 'L': [], 'n/L': [], 'Beta': [], 'charge': [], 'isotope': [],
-             'molecule': [], 'sequence': [], 'sequence_ext': [],
+        d = {'m/z': [], 'RT': [], 'm/z_RT': [], 'rank': [], 'Theoretical_m/z': [], 'isotopologue': [], 'length': [],
+             'Sp': [], 'dSp': [], 'n': [], 'sumI': [], 'L': [], 'n/L': [], 'Beta': [], 'charge': [], 'isotope': [],
+             'molecule': [], 'sequence': [], 'sequence_mods': [],
              'MS1_ppm': [], 'MS2_ppm': [], 'MS2_matches': []}
 
     else:
-        d = {'M': [], 'RT': [], 'M_RT': [], 'rank': [], 'Theo_mono_M': [], 'isotopologue': [], 'nts': [], 'Sp': [],
-             'dSp': [], 'n': [], 'sumI': [], 'sumI_all': [], 'L': [], 'n/L': [], 'Beta': [], 'charge': [],
+        d = {'m/z': [], 'RT': [], 'm/z_RT': [], 'rank': [], 'Theoretical_m/z': [], 'isotopologue': [], 'length': [],
+             'Sp': [], 'dSp': [], 'n': [], 'sumI': [], 'sumI_all': [], 'L': [], 'n/L': [], 'Beta': [], 'charge': [],
              'isotope': [], 'molecule': [], 'sequence': [],
-             'sequence_ext': [], 'MS1_ppm': [], 'MS2_ppm': [], 'MS2_matches': []}
+             'sequence_mods': [], 'MS1_ppm': [], 'MS2_ppm': [], 'MS2_matches': []}
 
     with open("./" + infile, 'rU') as input_file:
         for line in input_file:
@@ -63,13 +67,14 @@ def input_data(infile, excel, sumi_all):
             if line[0].isdigit():
                 sp = line.split()
                 prec_M = re.findall("[\d]+[.]?[\d]+", sp[0])[0]
-                d['M'].append(prec_M), d['nts'].append(int(sp[9])), d['Sp'].append(np.float64(sp[4].split('=')[1])),
+                d['m/z'].append(prec_M), d['length'].append(int(sp[9])), d['Sp'].append(
+                    np.float64(sp[4].split('=')[1])),
                 d['dSp'].append(sp[5].split('=')[1]), d['charge'].append(sp[10]),
                 d['isotope'].append(sp[8]), d['molecule'].append(sp[15]), d['sequence'].append(sp[11]),
-                d['sequence_ext'].append(sp[12]), d['RT'].append(sp[1].split('=')[1]),
-                d['M_RT'].append(prec_M + '_' + sp[1].split('=')[1]), d['MS1_ppm'].append(sp[3][:-3]),
+                d['sequence_mods'].append(sp[12]), d['RT'].append(sp[1].split('=')[1]),
+                d['m/z_RT'].append(prec_M + '_' + sp[1].split('=')[1]), d['MS1_ppm'].append(sp[3][:-3]),
                 d['MS2_matches'].append(",".join(sp[16:-1])),
-                d['Theo_mono_M'].append(round(np.float64(sp[2].split('=')[1]), 5))
+                d['Theoretical_m/z'].append(round(np.float64(sp[2].split('=')[1]), 5))
                 d['rank'].append(int(sp[6].split('=')[1]))
 
                 if '*' in sp[0]:
@@ -118,29 +123,29 @@ def input_data(infile, excel, sumi_all):
     df = pd.DataFrame(data=d)
 
     # Add info about the maximum intensity of precursor ions.
-    # Also clusters the ions based on nts + charge values
+    # Also clusters the ions based on length + charge values
     if excel != 'n':
         df_excel = read_excel_input(excel)
         for index, row in df.iterrows():
 
             max_int = \
                 df_excel[0][
-                    (df_excel[0]['m/z obs'].str.contains(row['M'])) & (df_excel[0]['RT'].str.contains(row['RT']))][
+                    (df_excel[0]['m/z obs'].str.contains(row['m/z'])) & (df_excel[0]['RT'].str.contains(row['RT']))][
                     'Prec_max_int']
             for m in max_int:
                 df.loc[df.index[index], 'Prec_max_int'] = m
 
             max_int = \
                 df_excel[1][
-                    (df_excel[1]['m/z obs'].str.contains(row['M'])) & (df_excel[1]['RT'].str.contains(row['RT']))][
+                    (df_excel[1]['m/z obs'].str.contains(row['m/z'])) & (df_excel[1]['RT'].str.contains(row['RT']))][
                     'Prec_max_int']
             for m in max_int:
                 df.loc[df.index[index], 'Prec_max_int'] = m
 
-    z = [str(row.nts) + "_" + str(row.charge) for index, row in df.iterrows()]
-    df['nts_z'] = z
+    z = [str(row.length) + "_" + str(row.charge) for index, row in df.iterrows()]
+    df['length_z'] = z
 
-    df = df.astype({"M": np.float64, 'dSp': np.float64})
+    df = df.astype({"m/z": np.float64, 'dSp': np.float64})
 
     return df
 
@@ -150,46 +155,46 @@ def filter_data(df, top, yl):
     Filter the data in preparation for the final graphic output
     """
     if top == 'y':
-        filt_df = df.sort_values(['M', yl], ascending=[True, False]).reset_index(drop=True)
+        filt_df = df.sort_values(['m/z', yl], ascending=[True, False]).reset_index(drop=True)
 
-        # Terminates the script if no matches are found
+        # Terminate the script if no matches are found
         if filt_df.empty:
             print("ERROR!!!!!! No target matches found. Execution terminated without output")
             sys.exit(1)
 
-        # Extracts the lines with decoys
+        # Extract the lines with decoys
         decoy_df = filt_df[filt_df['molecule'].str.contains('decoy')]
 
-        # Keep only the highest scoring decoy per unique combination M_RT       
-        decoy_df = decoy_df.sort_values('Sp', ascending=False).drop_duplicates(subset=['M', 'RT'])
-        decoy_df = decoy_df.sort_values(['M', yl], ascending=[True, False]).reset_index(drop=True)
+        # Keep only the highest scoring decoy per unique combination m/z_RT
+        decoy_df = decoy_df.sort_values('Sp', ascending=False).drop_duplicates(subset=['m/z', 'RT'])
+        decoy_df = decoy_df.sort_values(['m/z', yl], ascending=[True, False]).reset_index(drop=True)
 
-        # Removes the decoys from the targets filtered dataframe
+        # Remove the decoys from the targets filtered dataframe
         filt_df = filt_df[filt_df['molecule'].str.contains('decoy') == False]
 
-        # Creates a dataframe with all the "nontop" scoring targets
-        dup_df = filt_df.sort_values(['M', 'Sp'], ascending=[True, False])
-        dup_df = dup_df.drop_duplicates(subset=['M_RT', 'sequence'])
-        dup_df = dup_df[dup_df.duplicated(subset=['M', 'RT'])]
-        dup_df = dup_df.sort_values('Sp', ascending=False).drop_duplicates(subset=['M', 'RT'])
-        dup_df['dSp_2nd_target'] = dup_df['dSp']
-        dup_df = dup_df[['M_RT', 'dSp_2nd_target']]
+        # Create a dataframe with all the "nontop" scoring targets
+        dup_df = filt_df.sort_values(['m/z', 'Sp'], ascending=[True, False])
+        dup_df = dup_df.drop_duplicates(subset=['m/z_RT', 'sequence'])
+        dup_df = dup_df[dup_df.duplicated(subset=['m/z', 'RT'])]
+        dup_df = dup_df.sort_values('Sp', ascending=False).drop_duplicates(subset=['m/z', 'RT'])
+        dup_df['dSp2'] = dup_df['dSp']
+        dup_df = dup_df[['m/z_RT', 'dSp2']]
 
-        # Keep only the highest scoring target per unique combination M_RT
-        filt_df = filt_df.sort_values('Sp', ascending=False).drop_duplicates(subset=['M', 'RT'])
-        filt_df = filt_df.sort_values(['M', yl], ascending=[True, False]).reset_index(drop=True)
+        # Keep only the highest scoring target per unique combination m/z_RT
+        filt_df = filt_df.sort_values('Sp', ascending=False).drop_duplicates(subset=['m/z', 'RT'])
+        filt_df = filt_df.sort_values(['m/z', yl], ascending=[True, False]).reset_index(drop=True)
 
-        # Adds a column to the targets dataframe with the values of the second best dSp
-        filt_df = pd.merge(filt_df, dup_df, on='M_RT', how='outer')
+        # Add a column to the targets dataframe with the values of the second best dSp
+        filt_df = pd.merge(filt_df, dup_df, on='m/z_RT', how='outer')
         filt_df = filt_df[
-            ['M', 'RT', 'M_RT' , 'rank' , 'Theo_mono_M', 'isotopologue', 'nts', 'Sp', 'dSp', 'dSp_2nd_target',
-             'MS1_ppm', 'n', 'sumI', 'sumI_all', 'L', 'n/L', 'Beta', 'charge', 'isotope', 'molecule', 'sequence',
-             'sequence_ext', 'nts_z', 'MS2_ppm', 'MS2_matches']]
+            ['m/z', 'RT', 'm/z_RT', 'Theoretical_m/z', 'isotopologue', 'length', 'sequence', 'rank', 'Sp', 'dSp',
+             'dSp2', 'MS1_ppm', 'n', 'sumI', 'sumI_all', 'L', 'n/L', 'Beta', 'charge', 'isotope', 'molecule',
+             'sequence_mods', 'length_z', 'MS2_ppm', 'MS2_matches']]
 
     else:
         filt_df = df
 
-        # Terminates the script if no matches are found
+        # Terminate the script if no matches are found
         if filt_df.empty:
             print("ERROR!!!!! No target matches found. Execution terminated without output")
             sys.exit(1)
@@ -198,14 +203,16 @@ def filter_data(df, top, yl):
 
     # Add a column with info on targets having at least one competing decoy
     filt_df.insert(9, 'has_decoy', '')
-    filt_df.loc[filt_df.M_RT.isin(decoy_df.M_RT), 'has_decoy'] = 'y'
+    filt_df.loc[filt_df['m/z_RT'].isin(decoy_df['m/z_RT']), 'has_decoy'] = 'y'
 
     return filt_df, decoy_df
 
 
 def csv_output(df, l, per, Sp_cutoff, name_output, targets_with_decoys, isotopes):
     """
-     Generates the output .csv file with the values used to create the graphs
+     Generate the output .csv file with the values used to create the graphs
+     &
+     FDR file
      """
     in_plot_df, in_decoy_df = df
 
@@ -224,14 +231,14 @@ def csv_output(df, l, per, Sp_cutoff, name_output, targets_with_decoys, isotopes
 
         # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoff
         # are always kept
-        decoy_df = in_decoy_df[in_decoy_df.M_RT.isin(plot_df.M_RT)]
+        decoy_df = in_decoy_df[in_decoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
     else:
-        plot_df = in_plot_df.loc[(in_plot_df['nts'].isin(l)) & (in_plot_df['Sp'] > Sp_cutoff)]
+        plot_df = in_plot_df.loc[(in_plot_df['length'].isin(l)) & (in_plot_df['Sp'] > Sp_cutoff)]
 
         # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoff
         # are always kept
-        decoy_df = in_decoy_df[in_decoy_df.M_RT.isin(plot_df.M_RT)]
+        decoy_df = in_decoy_df[in_decoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
     plot_df.to_csv("./targets_{}.csv".format(name_output), index=False)
     decoy_df.to_csv("./decoys_{}.csv".format(name_output), index=False)
@@ -246,27 +253,28 @@ def csv_output(df, l, per, Sp_cutoff, name_output, targets_with_decoys, isotopes
         p50 = decoy_df.quantile(0.5)['Sp']
         p0 = decoy_df.quantile(0)['Sp']
 
-        nts, d = ['all'] + sorted(plot_df['nts'].unique()), {'nts': [], '99th': [], '95th': [], '90th': [], '80th': [],
-                                                             '75th': [], '50th': [], '0th': []}
+        nts, d = ['all'] + sorted(plot_df['length'].unique()), {'length': [], '99th': [], '95th': [], '90th': [],
+                                                                '80th': [],
+                                                                '75th': [], '50th': [], '0th': []}
         for i in nts:
-            d['nts'].append(i)
+            d['length'].append(i)
             if i != 'all':
-                d['99th'].append(len(plot_df.loc[(plot_df['Sp'] > p99) & (plot_df['nts'] == i)]['M'])), d[
-                    '95th'].append(len(plot_df.loc[(plot_df['Sp'] > p95) & (plot_df['nts'] == i)]['M']))
-                d['90th'].append(len(plot_df.loc[(plot_df['Sp'] > p90) & (plot_df['nts'] == i)]['M'])), d[
-                    '80th'].append(len(plot_df.loc[(plot_df['Sp'] > p80) & (plot_df['nts'] == i)]['M']))
-                d['75th'].append(len(plot_df.loc[(plot_df['Sp'] > p75) & (plot_df['nts'] == i)]['M'])), d[
-                    '50th'].append(len(plot_df.loc[(plot_df['Sp'] > p50) & (plot_df['nts'] == i)]['M']))
-                d['0th'].append(len(plot_df.loc[(plot_df['Sp'] > p0) & (plot_df['nts'] == i)]['M']))
+                d['99th'].append(len(plot_df.loc[(plot_df['Sp'] > p99) & (plot_df['length'] == i)]['m/z'])), d[
+                    '95th'].append(len(plot_df.loc[(plot_df['Sp'] > p95) & (plot_df['length'] == i)]['m/z']))
+                d['90th'].append(len(plot_df.loc[(plot_df['Sp'] > p90) & (plot_df['length'] == i)]['m/z'])), d[
+                    '80th'].append(len(plot_df.loc[(plot_df['Sp'] > p80) & (plot_df['length'] == i)]['m/z']))
+                d['75th'].append(len(plot_df.loc[(plot_df['Sp'] > p75) & (plot_df['length'] == i)]['m/z'])), d[
+                    '50th'].append(len(plot_df.loc[(plot_df['Sp'] > p50) & (plot_df['length'] == i)]['m/z']))
+                d['0th'].append(len(plot_df.loc[(plot_df['Sp'] > p0) & (plot_df['length'] == i)]['m/z']))
 
             else:
                 d['99th'].append(len(plot_df.loc[plot_df['Sp'] > p99]['M'])), d['95th'].append(
-                    len(plot_df.loc[plot_df['Sp'] > p95]['M'])), d['90th'].append(
-                    len(plot_df.loc[plot_df['Sp'] > p90]['M']))
-                d['80th'].append(len(plot_df.loc[plot_df['Sp'] > p80]['M'])), d['75th'].append(
-                    len(plot_df.loc[plot_df['Sp'] > p75]['M'])), d['50th'].append(
-                    len(plot_df.loc[plot_df['Sp'] > p50]['M']))
-                d['0th'].append(len(plot_df.loc[plot_df['Sp'] > p0]['M']))
+                    len(plot_df.loc[plot_df['Sp'] > p95]['m/z'])), d['90th'].append(
+                    len(plot_df.loc[plot_df['Sp'] > p90]['m/z']))
+                d['80th'].append(len(plot_df.loc[plot_df['Sp'] > p80]['m/z'])), d['75th'].append(
+                    len(plot_df.loc[plot_df['Sp'] > p75]['m/z'])), d['50th'].append(
+                    len(plot_df.loc[plot_df['Sp'] > p50]['m/z']))
+                d['0th'].append(len(plot_df.loc[plot_df['Sp'] > p0]['m/z']))
 
         d['95th(' + str(round(p95, 1)) + ')'] = d.pop('95th')
         d['90th(' + str(round(p90, 1)) + ')'] = d.pop('90th')
@@ -278,18 +286,18 @@ def csv_output(df, l, per, Sp_cutoff, name_output, targets_with_decoys, isotopes
         percentile_df = pd.DataFrame(data=d)
         percentile_df.to_csv("./Sp_vs_percentileSpdecoys_{}.csv".format(name_output), index=False)
 
-    # Creates a dataframe of targets for FDR estimations, with only targets that have at least one decoy
+    # Create a dataframe of targets for FDR estimations, with only targets that have at least one decoy
     if targets_with_decoys == 'y':
-        targets_FDR_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        targets_FDR_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
         targets_w_decoys_df = targets_FDR_df
     else:
         targets_FDR_df = plot_df
-        targets_w_decoys_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        targets_w_decoys_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
-    # Creates a dataframe with all values of dSp = 0
+    # Create a dataframe with all values of dSp = 0
     merged_df = pd.concat([targets_FDR_df.loc[targets_FDR_df['dSp'] == 0], decoy_df.loc[decoy_df['dSp'] == 0]],
                           ignore_index=True, sort=True)
-    merged_df = merged_df.drop_duplicates(subset='M_RT', keep=False)
+    merged_df = merged_df.drop_duplicates(subset='m/z_RT', keep=False)
     toptargets_df = merged_df[merged_df['molecule'].str.contains('decoy') == False]
 
     # Creates a dataframe with only the top match targets
@@ -300,27 +308,32 @@ def csv_output(df, l, per, Sp_cutoff, name_output, targets_with_decoys, isotopes
     if not np.isnan(decoy_max):
         step = round(decoy_max / 100, 3)
 
-        d = {'Sp_cutoff': [], 'top_match_targets(t)': [], 'unique_sequences_targets': [], 'top_match_decoys(D)': [],
+        d = {'Sp_cutoff': [], 'top_match_targets(t)': [], 'top_unique_targets': [], 'top_match_decoys(D)': [],
              'FDR(D/t)': [], 'FDR(%)': []}
 
-        # Cycle through various Sp_cutoffs to calculate FDR
+        # Loop through various Sp_cutoffs to calculate FDR
         for i in np.arange(0, round(decoy_max, 3) + step, step):
-            tot = len(toptargets_df[toptargets_df['Sp'] > i]['M'])
+            tot = len(toptargets_df[toptargets_df['Sp'] > i]['m/z'])
             if tot > 0:
                 d['Sp_cutoff'].append(i), d['top_match_targets(t)'].append(tot)
                 top_decoy = len(
                     merged_df[(merged_df['molecule'].str.contains('decoy') == True) & (merged_df['Sp'] > i)
-                    & (merged_df['rank'] == 1)]['M'])
+                              & (merged_df['rank'] == 1)]['m/z'])
                 d['top_match_decoys(D)'].append(top_decoy), d['FDR(D/t)'].append(round(top_decoy / tot, 4)), d[
                     'FDR(%)'].append(round(top_decoy * 100 / tot, 2))
-                d['unique_sequences_targets'].append(toptargets_df[toptargets_df['Sp'] > i]['sequence'].nunique())
+
+                # Define unique the targets with unique sequences, disregarding everything else. Ignore
+                # targets with one or more X in the sequence
+                d['top_unique_targets'].append(toptargets_df[(toptargets_df['Sp'] > i)
+                                                             & (toptargets_df['sequence'].str.contains('X') == False)][
+                                                   'sequence'].nunique())
 
         out_df = pd.DataFrame(data=d)
         outcsv = out_df.to_csv(index=False)
 
     else:
-        d = {'Sp_cutoff': [0], 'top_match_targets(t)': [len(merged_df[merged_df['Sp'] > 0]['M'])],
-             'unique_sequences_targets': [toptargets_df['sequence'].nunique()], 'top_match_decoys(D)': [0],
+        d = {'Sp_cutoff': [0], 'top_match_targets(t)': [len(merged_df[merged_df['Sp'] > 0]['m/z'])],
+             'top_unique_targets': [toptargets_df['sequence'].nunique()], 'top_match_decoys(D)': [0],
              'FDR(D/t)': [0], 'FDR(%)': [0]}
 
         out_df = pd.DataFrame(data=d)
@@ -336,7 +349,7 @@ def csv_output(df, l, per, Sp_cutoff, name_output, targets_with_decoys, isotopes
 
 def subplots_number(nts):
     """
-    Determines the number and distribution of the subplots when representing the scatterplot Sp_targetvsSp_decoys
+    Determine the number and distribution of the subplots when representing the scatterplot Sp_targetvs Sp_decoys
     based on precursor nucleotide lengths
     """
     lengths = len(nts)
@@ -376,14 +389,14 @@ def scatter_Sp_vs_Spdecoy(df, lengths, Sp_cutoff, MS1_offset_min, MS1_offset_max
     if isinstance(MS1_offset_max, int):
         plot_df = plot_df.loc[plot_df['MS1_ppm'] <= MS1_offset_max]
 
-        # The Sp cutoff is applied only to targets,
-        # decoys that share the same mz_RT with targets above cutoff are always kept
-    decoy_df = indecoy_df[indecoy_df.M_RT.isin(plot_df.M_RT)]
+    # The Sp cutoff is applied only to targets,
+    # decoys that share the same mz_RT with targets above cutoff are always kept
+    decoy_df = indecoy_df[indecoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
-    plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+    plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
-    # Merge the targets and decoy dataframe based on common M_RT values to print Sp vs Sp
-    df_merged = pd.merge(plot_df, decoy_df, how='inner', on='M_RT')
+    # Merge the targets and decoy dataframe based on common m/z_RT values to print Sp vs Sp
+    df_merged = pd.merge(plot_df, decoy_df, how='inner', on='m/z_RT')
     df_merged.dropna(inplace=True, subset=['Sp_x', 'Sp_y'])
 
     if 'all' in lengths:
@@ -397,21 +410,21 @@ def scatter_Sp_vs_Spdecoy(df, lengths, Sp_cutoff, MS1_offset_min, MS1_offset_max
 
         max_value = [y1.max(), x1.max()]
 
-        nts = sorted(df_merged['nts_x'].unique().tolist())
+        nts = sorted(df_merged['length_x'].unique().tolist())
 
-        # Create the scatter plot with 16 subplots divided by nts length
+        # Create the scatter plot with 16 subplots divided by length
         fig, axs = plt.subplots(4, 4, sharex=True, sharey=True)
         fig.suptitle('Targets score (Sp) vs corresponding decoys score (Sp) at different precursor lengths', y=0.95,
                      fontsize=7, fontweight='bold')
 
-        # Determines the number of subplots for the scatterplots of Sp_targets vs Sp_decoys on different precursor
+        # Determine the number of subplots for the scatterplots of Sp_targets vs Sp_decoys on different precursor
         # Nucleotide lengths
         graphs = subplots_number(nts)
 
         for i, l in enumerate(nts):
 
-            x = df_merged['Sp_x'].loc[df_merged['nts_x'] == l]
-            y = df_merged['Sp_y'].loc[df_merged['nts_x'] == l]
+            x = df_merged['Sp_x'].loc[df_merged['length_x'] == l]
+            y = df_merged['Sp_y'].loc[df_merged['length_x'] == l]
 
             plt.ylim(0 - max(max_value) / 50, max(max_value) + max(max_value) / 25)
             plt.xlim(0 - max(max_value) / 50, max(max_value) + max(max_value) / 25)
@@ -433,8 +446,8 @@ def scatter_Sp_vs_Spdecoy(df, lengths, Sp_cutoff, MS1_offset_min, MS1_offset_max
 
 
     else:
-        x1 = df_merged.loc[df_merged['nts_x'].isin(lengths)]['Sp_x']
-        y1 = df_merged.loc[df_merged['nts_y'].isin(lengths)]['Sp_y']
+        x1 = df_merged.loc[df_merged['length_x'].isin(lengths)]['Sp_x']
+        y1 = df_merged.loc[df_merged['length_y'].isin(lengths)]['Sp_y']
 
     if 'analysis' not in lengths:
         max_value = [y1.max(), x1.max()]
@@ -450,12 +463,10 @@ def scatter_Sp_vs_Spdecoy(df, lengths, Sp_cutoff, MS1_offset_min, MS1_offset_max
         if info_box == 'y':
             if isinstance(MS1_offset_min, int) or isinstance(MS1_offset_max, int):
                 textstr = '\n'.join(('N = {}'.format(len(plot_df.index)),
-                                     'Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
                                      'MS1_offset = [{},{}]'.format(MS1_offset_min, MS1_offset_max),
                                      'Sp cutoff [targets] = {}'.format(Sp_cutoff)))
             else:
                 textstr = '\n'.join(('N = {}'.format(len(plot_df.index)),
-                                     'Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
                                      'Sp cutoff [targets] = {}'.format(Sp_cutoff)))
 
             props = dict(boxstyle='round, pad = 1', facecolor='palegreen', edgecolor='green', alpha=0.5)
@@ -488,18 +499,18 @@ def barchart_global_normalized_scores(df, lengths, Sp_cutoff, MS1_offset_min, MS
 
     # The Sp cutoff is applied only to targets,
     # decoys that share the same mz_RT with targets above cutoff are always kept
-    decoy_df = indecoy_df[indecoy_df.M_RT.isin(plot_df.M_RT)]
+    decoy_df = indecoy_df[indecoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
-    plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+    plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
-    # Merge the targets and decoy dataframe based on common M_RT values to print Sp vs Sp
-    df_merged = pd.merge(plot_df, decoy_df, how='inner', on='M_RT')
+    # Merge the targets and decoy dataframe based on common m/z_RT values to print Sp vs Sp
+    df_merged = pd.merge(plot_df, decoy_df, how='inner', on='m/z_RT')
     df_merged.dropna(inplace=True, subset=['Sp_x', 'Sp_y'])
 
     # Create a smaller dataframe with only the top target/decoy per precursor ion
-    # Multiple occurrences of matches with the same M but different RT are consolidated and only the highest
+    # Multiple occurrences of matches with the same m/z but different RT are consolidated and only the highest
     # scoring target/decoy duo is used
-    df_noduplicates_MRT = df_merged.drop_duplicates(subset='M_x')
+    df_noduplicates_MRT = df_merged.drop_duplicates(subset='m/z_x')
 
     df_onlyvalues = df_noduplicates_MRT[['Sp_x', 'Sp_y']]
 
@@ -520,7 +531,7 @@ def barchart_global_normalized_scores(df, lengths, Sp_cutoff, MS1_offset_min, MS
     x = np.arange(len(labels))  # the label locations
     width = 0.3  # the width of the bars
 
-    # Determines the dimensions of the graph based on how many pairs have to be shown
+    # Determine the dimensions of the graph based on how many pairs have to be shown
     width_graph, height_graph = len(labels) / 5, len(labels) / 30
 
     fig, ax = plt.subplots(figsize=(width_graph, height_graph))
@@ -556,10 +567,10 @@ def scatter_dSp_vs_Sp(df, lengths, per, fdr_lines, Sp_cutoff, name_output, fdr_d
 
     # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoffs
     # are always kept
-    decoy_df = indecoy_df[indecoy_df.M_RT.isin(plot_df.M_RT)]
+    decoy_df = indecoy_df[indecoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
     if targets_with_decoys == 'y':
-        plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
     if 'all' in lengths:
         x1 = plot_df['dSp']
@@ -584,16 +595,16 @@ def scatter_dSp_vs_Sp(df, lengths, per, fdr_lines, Sp_cutoff, name_output, fdr_d
                      "90th p = " + str(frac_value_90), fontsize=5, color='cyan')
 
     else:
-        x1 = plot_df.loc[plot_df['nts'].isin(lengths)]['dSp']
-        y1 = plot_df.loc[plot_df['nts'].isin(lengths)]['Sp']
-        x2 = decoy_df.loc[decoy_df['nts'].isin(lengths)]['dSp']
-        y2 = decoy_df.loc[decoy_df['nts'].isin(lengths)]['Sp']
+        x1 = plot_df.loc[plot_df['length'].isin(lengths)]['dSp']
+        y1 = plot_df.loc[plot_df['length'].isin(lengths)]['Sp']
+        x2 = decoy_df.loc[decoy_df['length'].isin(lengths)]['dSp']
+        y2 = decoy_df.loc[decoy_df['length'].isin(lengths)]['Sp']
 
         if per == 'y':
             # Add horizontal lines with info on percentiles populations
 
-            red_plot_df, red_decoy_df = plot_df.loc[plot_df['nts'].isin(lengths)], decoy_df.loc[
-                decoy_df['nts'].isin(lengths)]
+            red_plot_df, red_decoy_df = plot_df.loc[plot_df['length'].isin(lengths)], decoy_df.loc[
+                decoy_df['length'].isin(lengths)]
             frac_value_95 = round(
                 red_plot_df[red_plot_df > (red_decoy_df.quantile(0.95)['Sp'])].count()['Sp'] / red_plot_df[
                     'Sp'].count(), 2)
@@ -611,7 +622,7 @@ def scatter_dSp_vs_Sp(df, lengths, per, fdr_lines, Sp_cutoff, name_output, fdr_d
                      red_decoy_df.quantile(0.9)['Sp'] + red_decoy_df.quantile(0.95)['Sp'] / 100,
                      "90th p = " + str(frac_value_90), fontsize=5, color='cyan')
 
-    # Adds the FDR line, if given as input
+    # Add the FDR line, if given as input
     if fdr_lines != 0:
 
         fdr_df = pd.read_csv(fdr_df_input, skiprows=3)
@@ -630,7 +641,8 @@ def scatter_dSp_vs_Sp(df, lengths, per, fdr_lines, Sp_cutoff, name_output, fdr_d
 
             else:
                 print(
-                    "Warning!! The FDR assessment has been made on less than 100 top targets, therefore it is not significant and will not be shown in the graphs")
+                    "Warning!! The FDR assessment has been made on less than 100 top targets, "
+                    "therefore it is not significant and will not be shown in the graphs")
 
     # Determine the y axis min and max values
     max_val = [y1.max(), y2.max()]
@@ -642,13 +654,11 @@ def scatter_dSp_vs_Sp(df, lengths, per, fdr_lines, Sp_cutoff, name_output, fdr_d
     # Place a box with info on the graph about the total number of points and parameters
     if info_box == 'y':
         if isinstance(MS1_offset_min, int) or isinstance(MS1_offset_max, int):
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   'MS1_offset = [{},{}]'.format(MS1_offset_min, MS1_offset_max),
                                   'Targets w/ decoys = {}'.format(targets_with_decoys))))
         else:
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   'Targets w/ decoys = {}'.format(targets_with_decoys))))
 
         props = dict(boxstyle='round, pad = 1', facecolor='palegreen', edgecolor='green', alpha=0.5)
@@ -683,15 +693,15 @@ def scatter_nts_vs_score(df, yl, y_bot, y_top, lengths, per, fdr_lines, Sp_cutof
 
         # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoff
         # are always kept
-    decoy_df = indecoy_df[indecoy_df.M_RT.isin(plot_df.M_RT)]
+    decoy_df = indecoy_df[indecoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
     if targets_with_decoys == 'y':
-        plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
     if 'all' in lengths:
-        x1 = plot_df['nts']
+        x1 = plot_df['length']
         y1 = plot_df[yl]
-        x2 = decoy_df['nts']
+        x2 = decoy_df['length']
         y2 = decoy_df[yl]
 
         if per == 'y':
@@ -711,16 +721,16 @@ def scatter_nts_vs_score(df, yl, y_bot, y_top, lengths, per, fdr_lines, Sp_cutof
                      "90th p = " + str(frac_value_90), fontsize=5, color='cyan')
 
     else:
-        x1 = plot_df.loc[plot_df['nts'].isin(lengths)]['nts']
-        y1 = plot_df.loc[plot_df['nts'].isin(lengths)][yl]
-        x2 = decoy_df.loc[decoy_df['nts'].isin(lengths)]['nts']
-        y2 = decoy_df.loc[decoy_df['nts'].isin(lengths)][yl]
+        x1 = plot_df.loc[plot_df['length'].isin(lengths)]['length']
+        y1 = plot_df.loc[plot_df['length'].isin(lengths)][yl]
+        x2 = decoy_df.loc[decoy_df['length'].isin(lengths)]['length']
+        y2 = decoy_df.loc[decoy_df['length'].isin(lengths)][yl]
 
         if per == 'y':
             # Add horizontal lines with info on percentiles populations
 
-            red_plot_df, red_decoy_df = plot_df.loc[plot_df['nts'].isin(lengths)], decoy_df.loc[
-                decoy_df['nts'].isin(lengths)]
+            red_plot_df, red_decoy_df = plot_df.loc[plot_df['length'].isin(lengths)], decoy_df.loc[
+                decoy_df['length'].isin(lengths)]
             frac_value_95 = round(
                 red_plot_df[red_plot_df > (red_decoy_df.quantile(0.95)['Sp'])].count()['Sp'] / red_plot_df[
                     'Sp'].count(), 2)
@@ -738,9 +748,9 @@ def scatter_nts_vs_score(df, yl, y_bot, y_top, lengths, per, fdr_lines, Sp_cutof
                      red_decoy_df.quantile(0.9)['Sp'] + red_decoy_df.quantile(0.95)['Sp'] / 100,
                      "90th p = " + str(frac_value_90), fontsize=5, color='cyan')
 
-    plot_df = plot_df.astype({"nts": int})
+    plot_df = plot_df.astype({"length": int})
     # Set the minimum value of x to be 1
-    plt.xticks(list(range(plot_df['nts'].min(), plot_df['nts'].max() + 1)))
+    plt.xticks(list(range(plot_df['length'].min(), plot_df['length'].max() + 1)))
 
     if y_bot and y_top != 0:
         plt.ylim(y_bot, y_top)
@@ -756,7 +766,7 @@ def scatter_nts_vs_score(df, yl, y_bot, y_top, lengths, per, fdr_lines, Sp_cutof
     x1 -= 0.1
     x2 += 0.1
 
-    # Adds the FDR line, if given as input
+    # Add the FDR line, if given as input
     if fdr_lines != 0:
         fdr_df = pd.read_csv(fdr_df_input, skiprows=3)
 
@@ -773,7 +783,8 @@ def scatter_nts_vs_score(df, yl, y_bot, y_top, lengths, per, fdr_lines, Sp_cutof
 
             else:
                 print(
-                    "Warning!! The FDR assessment has been made on less than 100 top targets, therefore it is not significant and will not be shown in the graphs")
+                    "Warning!! The FDR assessment has been made on less than 100 top targets, "
+                    "therefore it is not significant and will not be shown in the graphs")
 
     plt.scatter(x1, y1, facecolors='royalblue', edgecolors='blue', marker=".", alpha=0.75)
     plt.scatter(x2, y2, facecolors='lightcoral', edgecolors='red', marker=".", alpha=0.75)
@@ -781,13 +792,11 @@ def scatter_nts_vs_score(df, yl, y_bot, y_top, lengths, per, fdr_lines, Sp_cutof
     # Place a box with info on the graph about the total number of points and parameters
     if info_box == 'y':
         if isinstance(MS1_offset_min, int) or isinstance(MS1_offset_max, int):
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   'MS1_offset = [{},{}]'.format(MS1_offset_min, MS1_offset_max),
                                   'Targets w/ decoys = {}'.format(targets_with_decoys))))
         else:
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   'Targets w/ decoys = {}'.format(targets_with_decoys))))
 
         props = dict(boxstyle='round, pad = 1', facecolor='palegreen', edgecolor='green', alpha=0.5)
@@ -805,7 +814,7 @@ def scatter_nts_vs_score(df, yl, y_bot, y_top, lengths, per, fdr_lines, Sp_cutof
 
 def box_nts_vs_score(df, y, y_bot, y_top, lengths, Sp_cutoff, targets_with_decoys, MS1_offset_min, MS1_offset_max):
     """
-     Box plot nts vs scores of targets and decoys
+     Box plot length vs scores of targets and decoys
      """
     inplot_df, indecoy_df = df
 
@@ -820,22 +829,22 @@ def box_nts_vs_score(df, y, y_bot, y_top, lengths, Sp_cutoff, targets_with_decoy
 
     # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoff
     # are always kept
-    decoy_df = indecoy_df[indecoy_df.M_RT.isin(plot_df.M_RT)]
+    decoy_df = indecoy_df[indecoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
     if targets_with_decoys == 'y':
-        plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
-    plot_df = plot_df.astype({"nts": int})
-    max_nts = plot_df['nts'].max()
+    plot_df = plot_df.astype({"length": int})
+    max_nts = plot_df['length'].max()
 
     data1, data2 = [], []
 
     if 'all' in lengths:
         for i in range(3, max_nts + 1):
-            data1.append((list(plot_df.loc[plot_df['nts'] == i, y])))
-            data2.append((list(decoy_df.loc[decoy_df['nts'] == i, y])))
+            data1.append((list(plot_df.loc[plot_df['length'] == i, y])))
+            data2.append((list(decoy_df.loc[decoy_df['length'] == i, y])))
 
-            # Delete the entries of shorter nts from the list, empty values cause problems with boxplots
+        # Delete the entries of shorter length from the list, empty values cause problems with boxplots
         value = -1
         for i, x in enumerate(data1):
             if x:
@@ -849,8 +858,8 @@ def box_nts_vs_score(df, y, y_bot, y_top, lengths, Sp_cutoff, targets_with_decoy
     else:
         lengths.sort()
         for i in lengths:
-            data1.append((list(plot_df.loc[plot_df['nts'] == int(i), y])))
-            data2.append((list(decoy_df.loc[decoy_df['nts'] == int(i), y])))
+            data1.append((list(plot_df.loc[plot_df['length'] == int(i), y])))
+            data2.append((list(decoy_df.loc[decoy_df['length'] == int(i), y])))
 
     plt.xlabel('sequence_length'), plt.ylabel(y)
 
@@ -867,7 +876,7 @@ def box_nts_vs_score(df, y, y_bot, y_top, lengths, Sp_cutoff, targets_with_decoy
 
     if 'all' in lengths:
 
-        lenghts_labels = list(np.arange(plot_df['nts'].min(), plot_df['nts'].max() + 1))
+        lenghts_labels = list(np.arange(plot_df['length'].min(), plot_df['length'].max() + 1))
 
         target = plt.boxplot(data1, positions=[np.float64(x) - 0.15 for x in lenghts_labels], manage_ticks=False,
                              labels=lenghts_labels, widths=0.25, sym='b.')
@@ -913,15 +922,15 @@ def hist_Sp(df, lengths, Sp_cutoff, targets_with_decoys, MS1_offset_min, MS1_off
 
     # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoff
     # are always kept
-    decoy_df = indecoy_df[indecoy_df.M_RT.isin(plot_df.M_RT)]
+    decoy_df = indecoy_df[indecoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
     if targets_with_decoys == 'y':
-        plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
     # Apply the option about lengths if specified
     if 'all' not in lengths:
-        plot_df = plot_df.loc[plot_df['nts'].isin(lengths)]
-        decoy_df = decoy_df.loc[decoy_df['nts'].isin(lengths)]
+        plot_df = plot_df.loc[plot_df['length'].isin(lengths)]
+        decoy_df = decoy_df.loc[decoy_df['length'].isin(lengths)]
 
     # Determine statistical descriptors for targets and decoys
     median_t, mean_t, std_t = plot_df['Sp'].median(), plot_df['Sp'].mean(), plot_df['Sp'].std()
@@ -944,15 +953,13 @@ def hist_Sp(df, lengths, Sp_cutoff, targets_with_decoys, MS1_offset_min, MS1_off
     # Place a box with info on the graph about the total number of points and parameters
     if info_box == 'y':
         if isinstance(MS1_offset_min, int) or isinstance(MS1_offset_max, int):
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   'Targets w/ decoys = {}'.format(targets_with_decoys),
                                   'MS1_offset = [{},{}]'.format(MS1_offset_min, MS1_offset_max),
                                   r'$\mu(t)=%.2f$ M(t)=%.2f $\sigma(t)=%.2f$' % (mean_t, median_t, std_t,),
                                   r'$\mu(d)=%.2f$ M(d)=%.2f $\sigma(d)=%.2f$' % (mean_d, median_d, std_d,))))
         else:
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   'Targets w/ decoys = {}'.format(targets_with_decoys),
                                   r'$\mu(t)=%.2f$ M(t)=%.2f $\sigma(t)=%.2f$' % (mean_t, median_t, std_t,),
                                   r'$\mu(d)=%.2f$ M(d)=%.2f $\sigma(d)=%.2f$' % (mean_d, median_d, std_d,))))
@@ -980,18 +987,18 @@ def hist_top_Sp(df, lengths, Sp_cutoff, targets_with_decoys, MS1_offset_min, MS1
 
         # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoff
         # are always kept
-    decoy_df = indecoy_df[indecoy_df.M_RT.isin(plot_df.M_RT)]
+    decoy_df = indecoy_df[indecoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
     if targets_with_decoys == 'y':
-        plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
     # Select only the the targets and decoys with dSp = 0, top targets and top decoys
     top_plot_df, top_decoy_df = plot_df[plot_df['dSp'] == 0], decoy_df[decoy_df['dSp'] == 0]
 
     # Apply the option about lengths if specified
     if 'all' not in lengths:
-        top_plot_df = top_plot_df.loc[top_plot_df['nts'].isin(lengths)]
-        top_decoy_df = top_decoy_df.loc[top_decoy_df['nts'].isin(lengths)]
+        top_plot_df = top_plot_df.loc[top_plot_df['length'].isin(lengths)]
+        top_decoy_df = top_decoy_df.loc[top_decoy_df['length'].isin(lengths)]
 
     # Determine statistical descriptors for targets and decoys
     median_t, mean_t, std_t = top_plot_df['Sp'].median(), top_plot_df['Sp'].mean(), top_plot_df['Sp'].std()
@@ -1014,15 +1021,13 @@ def hist_top_Sp(df, lengths, Sp_cutoff, targets_with_decoys, MS1_offset_min, MS1
     # Place a box with info on the graph about the total number of points and parameters
     if info_box == 'y':
         if isinstance(MS1_offset_min, int) or isinstance(MS1_offset_max, int):
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   'Targets w/ decoys = {}'.format(targets_with_decoys),
                                   'MS1_offset = [{},{}]'.format(MS1_offset_min, MS1_offset_max),
                                   r'$\mu(t)=%.2f$ M(t)=%.2f $\sigma(t)=%.2f$' % (mean_t, median_t, std_t,),
                                   r'$\mu(d)=%.2f$ M(d)=%.2f $\sigma(d)=%.2f$' % (mean_d, median_d, std_d,))))
         else:
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   'Targets w/ decoys = {}'.format(targets_with_decoys),
                                   r'$\mu(t)=%.2f$ M(t)=%.2f $\sigma(t)=%.2f$' % (mean_t, median_t, std_t,),
                                   r'$\mu(d)=%.2f$ M(d)=%.2f $\sigma(d)=%.2f$' % (mean_d, median_d, std_d,))))
@@ -1050,38 +1055,36 @@ def hist_second_dSp(df, lengths, Sp_cutoff, targets_with_decoys, MS1_offset_min,
 
     # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoff
     # are always kept
-    decoy_df = indecoy_df[indecoy_df.M_RT.isin(plot_df.M_RT)]
+    decoy_df = indecoy_df[indecoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
     if targets_with_decoys == 'y':
-        plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
     # Select only the the targets and decoys with dSp = 0, top targets and top decoys
-    sec_plot_df = plot_df[(plot_df['dSp_2nd_target'] >= 0) & (plot_df['dSp'] == 0)]
+    sec_plot_df = plot_df[(plot_df['dSp2'] >= 0) & (plot_df['dSp'] == 0)]
 
     # Apply the option about lengths if specified
     if 'all' not in lengths:
-        sec_plot_df = sec_plot_df.loc[sec_plot_df['nts'].isin(lengths)]
+        sec_plot_df = sec_plot_df.loc[sec_plot_df['length'].isin(lengths)]
 
     # Determine statistical descriptors for targets and decoys
-    median_t, mean_t, std_t = sec_plot_df['dSp_2nd_target'].median(), sec_plot_df['dSp_2nd_target'].mean(), sec_plot_df[
-        'dSp_2nd_target'].std()
+    median_t, mean_t, std_t = sec_plot_df['dSp2'].median(), sec_plot_df['dSp2'].mean(), sec_plot_df[
+        'dSp2'].std()
 
     plt.xlabel('dSp'), plt.ylabel('Frequency')
     plt.title('dSp scores of the 2nd best match targets')
 
-    plt.hist(sec_plot_df['dSp_2nd_target'], bins=20, alpha=0.5, label='targets ({})'.format(len(sec_plot_df.index)),
+    plt.hist(sec_plot_df['dSp2'], bins=20, alpha=0.5, label='targets ({})'.format(len(sec_plot_df.index)),
              edgecolor='black', color='blue')
 
     # Place a box with info on the graph about the total number of points and parameters
     if info_box == 'y':
         if isinstance(MS1_offset_min, int) or isinstance(MS1_offset_max, int):
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   'MS1_offset = [{},{}]'.format(MS1_offset_min, MS1_offset_max),
                                   r'$\mu(t)=%.2f$ M(t)=%.2f $\sigma(t)=%.2f$' % (mean_t, median_t, std_t,))))
         else:
-            textstr = ('\n'.join(('Nts. lengths = {}'.format(','.join([str(x) for x in lengths])),
-                                  'Sp cutoff [targets] = {}'.format(Sp_cutoff),
+            textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
                                   r'$\mu(t)=%.2f$ M(t)=%.2f $\sigma(t)=%.2f$' % (mean_t, median_t, std_t,))))
         props = dict(boxstyle='round, pad = 1', facecolor='palegreen', edgecolor='green', alpha=0.5)
         plt.text(0.79, 0.93, textstr, transform=plt.gca().transAxes, fontsize=4, verticalalignment='top', bbox=props,
@@ -1105,7 +1108,7 @@ def ppm_errors_histogram(df, lengths, Sp_cutoff, label, match_file, MS1_offset_m
     if isinstance(MS1_offset_max, int):
         plot_df = plot_df.loc[plot_df['MS1_ppm'] <= MS1_offset_max]
 
-     # Obtain the info on MS1/MS2 ppm offsets used in matching&scoring
+    # Obtain the info on MS1/MS2 ppm offsets used in matching&scoring
     with open(match_file) as infile:
         head = [next(infile) for x in range(20)]
 
@@ -1188,21 +1191,21 @@ def scatter_nts_z_vs_score(df, yl, y_bot, y_top, lengths, Sp_cutoff, MS1_offset_
         decoy_df = decoy_df.loc[decoy_df['MS1_ppm'] <= MS1_offset_max]
 
     if targets_with_decoys == 'y':
-        plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
-    plot_df = plot_df.sort_values(['nts', 'charge'], ascending=[True, True])
+    plot_df = plot_df.sort_values(['length', 'charge'], ascending=[True, True])
 
     if 'all' in lengths:
-        x1 = plot_df['nts_z']
+        x1 = plot_df['length_z']
         y1 = plot_df[yl]
-        x2 = decoy_df['nts_z']
+        x2 = decoy_df['length_z']
         y2 = decoy_df[yl]
 
     else:
-        x1 = plot_df.loc[plot_df['nts'].isin(lengths)]['nts_z']
-        y1 = plot_df.loc[plot_df['nts'].isin(lengths)][yl]
-        x2 = decoy_df.loc[decoy_df['nts'].isin(lengths)]['nts_z']
-        y2 = decoy_df.loc[decoy_df['nts'].isin(lengths)][yl]
+        x1 = plot_df.loc[plot_df['length'].isin(lengths)]['length_z']
+        y1 = plot_df.loc[plot_df['length'].isin(lengths)][yl]
+        x2 = decoy_df.loc[decoy_df['length'].isin(lengths)]['length_z']
+        y2 = decoy_df.loc[decoy_df['length'].isin(lengths)][yl]
 
     if y_bot and y_top != 0:
         plt.ylim(y_bot, y_top)
@@ -1220,7 +1223,7 @@ def scatter_nts_z_vs_score(df, yl, y_bot, y_top, lengths, Sp_cutoff, MS1_offset_
 
     plt.margins(x=0.025)
 
-    plt.xlabel('nts_z'), plt.ylabel(yl)
+    plt.xlabel('length_z'), plt.ylabel(yl)
 
     # Create a legend
     dec_legend = plt.scatter([], [], facecolors='lightcoral', edgecolors='red', marker=".", alpha=0.75)
@@ -1230,7 +1233,7 @@ def scatter_nts_z_vs_score(df, yl, y_bot, y_top, lengths, Sp_cutoff, MS1_offset_
 
 def box_nts_z_vs_score(df, y, y_bot, y_top, lengths, Sp_cutoff, MS1_offset_min, MS1_offset_max, targets_with_decoys):
     """
-     Box plot
+     Box plot with Sp scores vs target/decoy sequences length grouped by charge state
      """
     inplot_df, indecoy_df = df
 
@@ -1246,15 +1249,14 @@ def box_nts_z_vs_score(df, y, y_bot, y_top, lengths, Sp_cutoff, MS1_offset_min, 
         decoy_df = decoy_df.loc[decoy_df['MS1_ppm'] <= MS1_offset_max]
 
     if targets_with_decoys == 'y':
-        plot_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        plot_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
-    plot_df = plot_df.sort_values(['nts', 'charge'], ascending=[True, True])
+    plot_df = plot_df.sort_values(['length', 'charge'], ascending=[True, True])
 
     if 'all' not in lengths:
-        plot_df = plot_df[plot_df['nts'].isin(lengths)]
+        plot_df = plot_df[plot_df['length'].isin(lengths)]
 
-    # max_nts = plot_df['nts'].max()
-    nts_z = plot_df['nts_z'].unique()
+    nts_z = plot_df['length_z'].unique()
 
     if y_bot and y_top != 0:
         plt.ylim((y_bot, y_top))
@@ -1269,9 +1271,9 @@ def box_nts_z_vs_score(df, y, y_bot, y_top, lengths, Sp_cutoff, MS1_offset_min, 
 
     data = []
     for i in nts_z:
-        data.append((list(plot_df.loc[plot_df['nts_z'] == i, y])))
+        data.append((list(plot_df.loc[plot_df['length_z'] == i, y])))
 
-    plt.xlabel('nts_z'), plt.ylabel(y)
+    plt.xlabel('length_z'), plt.ylabel(y)
     target = plt.boxplot(data, labels=nts_z.tolist(), sym='b.')
 
     for element in ['boxes', 'whiskers', 'fliers', 'means', 'medians', 'caps']:
@@ -1295,10 +1297,10 @@ def FDR_update(df, lengths, Sp_cutoff, name_output, MS1_offset_min, MS1_offset_m
 
             # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoff
             # are always kept
-        decoy_df = in_decoy_df[in_decoy_df.M_RT.isin(plot_df.M_RT)]
+        decoy_df = in_decoy_df[in_decoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
     else:
-        plot_df = in_plot_df.loc[(in_plot_df['nts'].isin(lengths)) & (in_plot_df['Sp'] > Sp_cutoff)]
+        plot_df = in_plot_df.loc[(in_plot_df['length'].isin(lengths)) & (in_plot_df['Sp'] > Sp_cutoff)]
 
         # Apply the offset cutoff if requested
         if isinstance(MS1_offset_min, int):
@@ -1308,57 +1310,59 @@ def FDR_update(df, lengths, Sp_cutoff, name_output, MS1_offset_min, MS1_offset_m
 
             # The Sp cutoff is applied only to targets, decoys that share the same mz_RT with targets above cutoff
             # are always kept
-        decoy_df = in_decoy_df[in_decoy_df.M_RT.isin(plot_df.M_RT)]
+        decoy_df = in_decoy_df[in_decoy_df['m/z_RT'].isin(plot_df['m/z_RT'])]
 
         # Creates a dataframe of targets for FDR estimations, with only targets that have at least one decoy
     if targets_with_decoys == 'y':
-        targets_FDR_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        targets_FDR_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
         targets_w_decoys_df = targets_FDR_df
 
     else:
         targets_FDR_df = plot_df
-        targets_w_decoys_df = plot_df[plot_df.M_RT.isin(decoy_df.M_RT)]
+        targets_w_decoys_df = plot_df[plot_df['m/z_RT'].isin(decoy_df['m/z_RT'])]
 
-    # Creates a dataframe with all values of dSp = 0
+    # Create a dataframe with all values of dSp = 0
     merged_df = pd.concat([targets_FDR_df.loc[targets_FDR_df['dSp'] == 0], decoy_df.loc[decoy_df['dSp'] == 0]],
                           ignore_index=True, sort=True)
-    merged_df = merged_df.drop_duplicates(subset='M_RT', keep=False)
+    merged_df = merged_df.drop_duplicates(subset='m/z_RT', keep=False)
     toptargets_df = merged_df[merged_df['molecule'].str.contains('decoy') == False]
 
-    # Creates a dataframe with only the top match targets
-    toptargets_df = targets_FDR_df.loc[targets_FDR_df['dSp'] == 0]
+    # Create a dataframe with only the top match targets
+    toptargets_df = targets_FDR_df.loc[targets_FDR_df['rank'] == 1]
 
     decoy_max = np.float64(merged_df[merged_df['molecule'].str.contains('decoy') == True]['Sp'].max())
 
     if not np.isnan(decoy_max):
         step = round(decoy_max / 100, 3)
 
-        d = {'Sp_cutoff': [], 'top_match_targets(t)': [], 'unique_sequences_targets': [], 'top_match_decoys(D)': [],
+        d = {'Sp_cutoff': [], 'top_match_targets(t)': [], 'top_unique_targets': [], 'top_match_decoys(D)': [],
              'FDR(D/t)': [], 'FDR(%)': []}
 
         # Cycle through various Sp_cutoffs to calculate FDR
         for i in np.arange(0, round(decoy_max, 3) + step, step):
-            tot = len(toptargets_df.loc[toptargets_df['Sp'] > i]['M'])
+            tot = len(toptargets_df.loc[toptargets_df['Sp'] > i]['m/z'])
             if tot > 0:
                 d['Sp_cutoff'].append(i), d['top_match_targets(t)'].append(tot)
                 top_decoy = len(
-                    merged_df.loc[(merged_df['molecule'].str.contains('decoy') == True) & (merged_df['Sp'] > i)]['M'])
+                    merged_df.loc[(merged_df['molecule'].str.contains('decoy') == True) & (merged_df['Sp'] > i)]['m/z'])
                 d['top_match_decoys(D)'].append(top_decoy), d['FDR(D/t)'].append(round(top_decoy / tot, 4)), d[
                     'FDR(%)'].append(round(top_decoy * 100 / tot, 2))
-                d['unique_sequences_targets'].append(toptargets_df.loc[toptargets_df['Sp'] > i]['sequence'].nunique())
+                d['top_unique_targets'].append(toptargets_df[(toptargets_df['Sp'] > i)
+                                                             & (toptargets_df['sequence'].str.contains('X') == False)][
+                                                   'sequence'].nunique())
 
         out_df = pd.DataFrame(data=d)
         outcsv = out_df.to_csv(index=False)
 
     else:
-        d = {'Sp_cutoff': [0], 'top_match_targets(t)': [len(merged_df[merged_df['Sp'] > 0]['M'])],
-             'unique_sequences_targets': [toptargets_df['sequence'].nunique()], 'top_match_decoys(D)': [0],
+        d = {'Sp_cutoff': [0], 'top_match_targets(t)': [len(merged_df[merged_df['Sp'] > 0]['m/z'])],
+             'top_unique_targets': [toptargets_df['sequence'].nunique()], 'top_match_decoys(D)': [0],
              'FDR(D/t)': [0], 'FDR(%)': [0]}
 
         out_df = pd.DataFrame(data=d)
         outcsv = out_df.to_csv(index=False)
 
-    # Outputs the csv file with the FDR estimations
+    # Output the csv file with the FDR estimations
     targets_with_decoys, targets_without_decoys = len(targets_w_decoys_df.index), len(targets_FDR_df.index) - len(
         targets_w_decoys_df.index)
     open("FDR_{}_edited.csv".format(name_output), 'w').writelines([

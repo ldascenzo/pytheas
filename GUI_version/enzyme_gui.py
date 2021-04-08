@@ -1,18 +1,23 @@
 #!/usr/bin/python3
 
 """
-Last update: September 2020
-Credits to: Luigi D'Ascenzo, PhD - The Scripps Research Institute, La Jolla (CA)
-Contact info: dascenzo@scripps.edu
-GitHub project: https://github.com/ldascenzo/pytheas
+Last update: March 2021
+Author: Luigi D'Ascenzo, PhD - The Scripps Research Institute, La Jolla (CA)
+Contact info: dascenzoluigi@gmail.com
+GitHub project repository: https://github.com/ldascenzo/pytheas
 
 ***DESCRIPTION***
-This script performs an in silico digest of given RNA sequence(s), using a specified endonuclease enzyme (or none) and
-allowing a number of consecutive missed cleavages up to 4. Information on the 3'-end chemistry of the cleaved RNA
-fragment is also required. Information on the 5'-end of cleaved RNA fragments and of the 3' and 5'ends of the whole RNA
-molecules are optional.
-The output "output.1" file contains all the RNA fragments with info on their sequence,
-starting/ending nucleotides, number of missed cleavages and 3'/5'-end chemistry of the cleaved fragments.
+First step of the Pytheas in silico digest library generation. Given RNA sequences(s) in fasta format are cleaved
+with a specific RNA endonuclease enzyme (or not if the user choses so). Additional parameters such as missed cleavages
+(up to 4), 3' and 5' chemistry [P, OH or cP] for the nucleolytic fragments and the whole RNA molecule are optional.
+If non-specific nucleoltic cleavage is requested, the values of minimum and maximum nucleolytic sequences length
+has to be specified.
+
+***OUTPUT***
+1) output.1 file contains all the RNA nucleolytic fragments with info on their sequence, numbering referred to the input
+RNA sequence, number of missed cleavages and 3'/5'-end chemistry.
+2) seq_output containing a compact version of the input RNA sequences, used for modification sites validation in later
+steps of the in silico digestion generation
 
 """
 
@@ -35,24 +40,24 @@ class Enzyme_cleavage:
 
     def generate_output(self):
         """
-        Generates the final output file with lines in the format: Molecule Sequence Nstart Nend Miss 5'end 3'end
+        Final output file generation with lines in the format:
+        molecule sequence residue_start residue_end miss 5'end 3'end
         """
         final_lines, seq_output, unique_ids = [], [], []
         sequences_dictionary = {}
 
-        # Separate the input files if multiple fasta files are selected, based on the OS where the script is
-        # executed
+        # Separate the input files if multiple fasta files are selected, based on the running OS
         if platform.system() == 'Windows':
             RNA_input_files = self.RNA_sequences.split(';')
 
         else:
             RNA_input_files = self.RNA_sequences.split(':')
 
-        # Cycles through the fasta files given as input
+        # Loop through the fasta files given as input extracting the sequences
         for fasta_file in RNA_input_files:
             with open(fasta_file.rstrip(), 'r') as handle:
 
-                # Extract and process the sequences within fasta files
+                # Extract and process the input fasta sequences
                 for seq in SeqIO.parse(handle, "fasta"):
 
                     if seq.id in unique_ids:
@@ -68,12 +73,13 @@ class Enzyme_cleavage:
                         sequences_dictionary[str(seq.id)] = sequence
                         seq_output.append(str(seq.id) + " " + sequence + "\n")
 
-                        # Adds the nonspecific cleavage lines or the missed cleavages lines
+                        # Append the nonspecific cleavage lines
                         if self.enzyme == 'nonspecific':
                             final_lines = final_lines + nonspecific(str(seq.id), sequence,
                                                                     self.nonspecific_min_length,
                                                                     self.nonspecific_max_length)
 
+                        # Append the missed cleavages lines based on the selected values
                         else:
 
                             if self.miss == 0:
@@ -107,7 +113,7 @@ class Enzyme_cleavage:
 
     def enzyme_cut(self):
         """
-        Defines endonuclease cutting sites (cleavage on 3' of the given nucleotide)
+        Definition of the RNA endonuclease cleavages (on 3' of the given nucleotide)
         """
         if self.enzyme == 'A':
             cut_nts = ['C', 'U']
@@ -128,11 +134,12 @@ class Enzyme_cleavage:
 
     def assign_chemistry(self, fragment, sequences):
         """
-        Assigns the 3' and 5' chemistry to the cleaved fragments
+        Assign the 3' and 5' chemistry to the cleaved fragments based on the user-specific options
         """
         values = fragment.split()
         outlines = []
 
+        # Add the 5' and 3' chemistry for the starting and ending nucleotides of each RNA sequence
         if values[2] == '1':
             for end5 in self.RNA_5end_chem:
                 if int(values[3]) == len(sequences[values[0]]):
@@ -141,6 +148,7 @@ class Enzyme_cleavage:
                 else:
                     for end3 in self.cleaved_fragments_3end_chem:
                         outlines.append("{} {} {}\n".format(fragment.rstrip(), end5, end3))
+        # Add the chemistry info for all the other sequences
         else:
             for end5 in self.cleaved_fragments_5end_chem:
                 if int(values[3]) == len(sequences[values[0]]):
@@ -154,15 +162,15 @@ class Enzyme_cleavage:
 
     def final_output(self):
         """
-        Writes the output file output.1
+        Generate the output file output.1
         """
-        # The header depends on the choice of nonspecific cleavage or an endonuclease by the user
+        # The header info differ based on the choice of nonspecific or specific cleavage
         if self.enzyme == 'nonspecific':
             starting_lines = ["#ENZYME {}\n#NONSPECIFIC_MIN_LENGTH {}\n#NONSPECIFIC_MAX_LENGTH {}"
                               "\n#CLEAVED_FRAGMENTS_5'CHEMISTRY"
                               " {}\n#CLEAVED_FRAGMENTS_3'CHEMISTRY {}\n#WHOLE_RNA_5'CHEMISTRY {}"
-                              "\n#WHOLE_RNA_3'CHEMISTRY {}\nMolecule Seq Nstart Nend Miss "
-                              "5'chem 3'chem\n".format(self.enzyme,
+                              "\n#WHOLE_RNA_3'CHEMISTRY {}\nmolecule sequence residue_start residue_end miss "
+                              "5'end 3'end\n".format(self.enzyme,
                                                        self.nonspecific_min_length,
                                                        self.nonspecific_max_length,
                                                        ','.join(self.cleaved_fragments_5end_chem),
@@ -172,8 +180,8 @@ class Enzyme_cleavage:
         else:
             starting_lines = ["#ENZYME {}\n#MISSED_CLEAVAGES {}\n#CLEAVED_FRAGMENTS_5'CHEMISTRY {}\n"
                               "#CLEAVED_FRAGMENTS_3'CHEMISTRY {}\n#WHOLE_RNA_5'CHEMISTRY {}"
-                              "\n#WHOLE_RNA_3'CHEMISTRY {}\nMolecule Seq Nstart Nend Miss "
-                              "5'chem 3'chem\n".format(self.enzyme, self.miss,
+                              "\n#WHOLE_RNA_3'CHEMISTRY {}\nmolecule sequence residue_start residue_end miss "
+                              "5'end 3'end\n".format(self.enzyme, self.miss,
                                                        ','.join(self.cleaved_fragments_5end_chem),
                                                        ','.join(self.cleaved_fragments_3end_chem),
                                                        ','.join(self.RNA_5end_chem),
@@ -184,27 +192,29 @@ class Enzyme_cleavage:
 
 def print_ReSites(seq_id, sequence, cut_nts):
     """
-    Extracts all RNA cleavages fragments for the nuclease. Fragments are given with the format:
-    Molecule Sequence Nstart Nend 5'chem 3'chem
+    Computation of all the RNA cleavages fragments for the nuclease.
+    Fragment sequences are given with the format:
+    molecule sequence residue_start residue_end 5'end 3'end
     """
     output_lines = []
 
     if len(cut_nts) == 1:
-        # Regular expression matching all occurrences of the given base except if at the end of the sequence
+        # All occurrences of the given base are matched except if at the end of the sequence
         pattern = r"{0}(?!$)".format(cut_nts[0])
 
     elif len(cut_nts) == 2:
-        # Regular expression matching all occurrences of the given base except if at the end of the sequence
+        # All occurrences of the given base are matched except if at the end of the sequence
         pattern = r"({0}|{1})(?!$)".format(cut_nts[0], cut_nts[1])
 
     elif len(cut_nts) == 0:
-        # Regular expression matching no nucleotide in case of no enzymatic digestion
+        # No nucleotides are matched in case of no enzymatic digestion
         pattern = 'X1X'
 
+    # List of all the cleavage sites for the given enzyme
     sites = [str(m.start()) for m in re.finditer(pattern, sequence)]
 
     if sites:
-        # Manually adding the first fragment to the fragments list
+        # Dirty trick: manually adding the first fragment to the fragments list
         output_lines.append(
             "{} {} {} {} {}\n".format(seq_id, sequence[:int(sites[0]) + 1], str(1), str(int(sites[0]) + 1),
                                       str(0)))
@@ -216,7 +226,7 @@ def print_ReSites(seq_id, sequence, cut_nts):
 
     sites.append(str(len(sequence)))
 
-    # Cycle to add all the remaining fragments
+    # Loop to add all the remaining fragments to the output list
     for start, end in zip(sites, sites[1:]):
 
         if int(end) < len(sequence):
@@ -235,7 +245,7 @@ def print_ReSites(seq_id, sequence, cut_nts):
 
 def miss_1(input_list):
     """
-    Adds the fragments with 1 missed cleavage
+    Generate the fragments with 1 missed cleavage
     """
     output_list = []
 
@@ -249,7 +259,7 @@ def miss_1(input_list):
 
 def miss_2(input_list):
     """
-    Adds the fragments with 2 missed cleavages
+    Generate the fragments with 2 missed cleavages
     """
     output_list = []
 
@@ -264,7 +274,7 @@ def miss_2(input_list):
 
 def miss_3(input_list):
     """
-    Adds the fragments with 3 missed cleavages
+    Generate the fragments with 3 missed cleavages
     """
     output_list = []
 
@@ -280,7 +290,7 @@ def miss_3(input_list):
 
 def miss_4(input_list):
     """
-    Adds the fragments with 4 missed cleavages
+    Generate the fragments with 4 missed cleavages
     """
     output_list = []
 
@@ -296,7 +306,8 @@ def miss_4(input_list):
 
 def nonspecific(rna_id, sequence, min_length, max_length):
     """
-    Obtains all the fragment sequences in case of nonspecific cleavage
+    Compute all the fragment sequences in case of nonspecific cleavage, based on the info selected by the user
+    on minimum and maximum length for the sequences generated from nonspecific cleavage
     """
     output_sequences, seq_list = [], list(sequence)
 
