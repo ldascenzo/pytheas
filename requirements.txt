@@ -3,10 +3,8 @@ Biopython
 pandas 
 lxml 
 numpy 
-Gooey
 matplotlib
 pyteomics
-
 # Later version of xlrd raise errors when executing the digest pipeline
 xlrd==1.2.0 
-
+Gooey
