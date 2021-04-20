@@ -50,7 +50,7 @@ $ pip3 install -r requirements.txt
 ```
 
 ## Pulling Pytheas repository through Docker
-### Windows10
+### Windows 10
 Install [Docker Desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows)
 Open a Command Prompt (from the Start menu) and pull the Pytheas Docker repository
 ```
