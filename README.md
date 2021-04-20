@@ -1,4 +1,4 @@
-# Pytheas installation and basic usage
+# Pytheas installation and basic usage notes
 
 ## General notes
 Pytheas has been tested on Windows10 and Linux (Ubuntu) systems. In the current release, there are two supported versions, one with a graphical interface (GUI) and one exclusively command line based (CL). The GUI version is the preferred one, but in case the user experiences issues while using it, the CL version is a good alternative albeit less user-friendly. For the purposes of inputs and outputs the scripts of the two versions are identical. Both versions require to call the component of the Pytheas workflow via command line, but the GUI version offers to the user a graphical interface to select the parameters and run the analysis. A third option is to run Pytheas through Docker, using the provided Dockerfile to build the image. 
