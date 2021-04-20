@@ -10,7 +10,7 @@ From the [GitHub repository](https://github.com/ldascenzo/pytheas) Pytheas can b
 This will create a *pytheas* directory at the chosen location, with all the files needed to run Pytheas.
 
 ### Windows 10
-Download the latest [Anaconda version](anaconda.com/products/individual) based on the Windows version in usage (by April 2021 it is *Python 3.8 Windows 64-bit Graphical Installer*).
+Download the latest [Anaconda version](https://docs.anaconda.com/anaconda/install/) based on the Windows version in usage (by April 2021 it is *Python 3.8 Windows 64-bit Graphical Installer*).
 Install Anaconda leaving the standard options selected. 
 
 Open an Anaconda Powershell Prompt (*Start menu -> Anaconda Powershell Prompt*).
