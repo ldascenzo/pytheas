@@ -1,9 +1,9 @@
 # Pytheas installation and basic usage notes
 
 ## General notes
-Pytheas has been tested on Windows10 and Linux (Ubuntu) systems. In the current release, there are two supported versions, one with a graphical interface (GUI) and one exclusively command line based (CL). The GUI version is the preferred one, but in case the user experiences issues while using it, the CL version is a good alternative albeit less user-friendly. For the purposes of inputs and outputs the scripts of the two versions are identical. Both versions require to call the component of the Pytheas workflow via command line, but the GUI version offers to the user a graphical interface to select the parameters and run the analysis. A third option is to run Pytheas through Docker, using the provided Dockerfile to build the image. 
+Pytheas has been fully tested on Windows 10 and Linux (Ubuntu 20.04) systems, and not fully tested but working on macOS systems. In the current release, there are two supported versions, one with a graphical interface (GUI) and one exclusively command line based (CL). The GUI version is the preferred one, but in case the user experiences issues while using it, the CL version is a good alternative albeit less user-friendly. For the purposes of inputs and outputs the scripts of the two versions are identical. Both versions require to call the component of the Pytheas workflow via command line, but the GUI version offers to the user a graphical interface to select the parameters and run the analysis. A third option is to run Pytheas through Docker, using the provided Dockerfile to build the image. 
 Several instances of files and libraries needed for the execution of other scripts (either already present or created while running Pytheas) are packaged together in the same directory, please be careful if moving the scripts from their original position as it may break some dependencies. It is therefore suggested to run the scripts in their provided directories and transfer around only the output files generated.
- 
+
 ## Pytheas Installation
 ### Download GitHub repository
 From the [GitHub repository](https://github.com/ldascenzo/pytheas) Pytheas can be downloaded either selecting the green “Code” button and choosing “Download ZIP” or cloning locally the git repository. The first option downloads a compressed directory with all the files, including the two GUI version and CL version main working directories. To clone the git repository, install git ([Windows instructions](https://git-scm.com/download/win)), then open a shell prompt (in Windows under *Start > Command Prompt*) and navigate into the desired directory for cloning Pytheas repository. Then, within this directory run `git clone https://github.com/ldascenzo/pytheas.git`
@@ -48,6 +48,13 @@ Navigate to the local pytheas directory, then install all the requirements neede
 ```
 $ pip3 install -r requirements.txt
 ```
+
+### macOS support
+The support on macOS systems is not fully tested, but the Anaconda installation described for the Windows version is the recommended way of installing Pytheas dependencies. On top of the Windows instructions, the requirements to run the GUI version are installing python.app with
+
+```conda install -c anaconda python.app```
+
+And calling the scripts using `pythonw` 
 
 ## Pulling Pytheas repository through Docker
 ### Windows 10
