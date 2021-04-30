@@ -1,9 +1,0 @@
-Molecule Position ID ID_ext Include
-calibration_oligo_7 2 K [Cm] 1
-calibration_oligo_48 4 Y [Y] 1
-calibration_oligo_75 5 l [mU] 1
-calibration_oligo_82 3 j [mG] 1
-calibration_oligo_85 6 k [mC] 1
-calibration_oligo_88 11 i [mA] 1
-calibration_oligo_93 2 j [mG] 1
-calibration_oligo_94 12 i [mA] 1
