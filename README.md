@@ -68,7 +68,7 @@ docker pull ldascenzo/pytheas:latest
 Follow the installation instructions for [Docker](https://docs.docker.com/engine/install/ubuntu/)
 Open a Terminal prompt to pull the Pytheas Docker repository
 ```
-docker pull ldascenzo/pytheas:latest
+sudo docker pull ldascenzo/pytheas:latest
 ```
 
 ## Usage info for Linux, Windows, macOS and Docker versions
