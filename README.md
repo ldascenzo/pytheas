@@ -56,17 +56,17 @@ The Anaconda installation described for the Windows version is the recommended w
 
 And calling the scripts using `pythonw` 
 
-## Pulling Pytheas repository through Docker
+## Pulling Pytheas image through Docker
 ### Windows 10
 Install [Docker Desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows)
-Open a Command Prompt (from the Start menu) and pull the Pytheas Docker repository
+Open a Command Prompt (from the Start menu) and pull the Pytheas Docker image
 ```
 docker pull ldascenzo/pytheas:latest
 ```
 
 ### Linux (Ubuntu 20.04)
 Follow the installation instructions for [Docker](https://docs.docker.com/engine/install/ubuntu/)
-Open a Terminal prompt to pull the Pytheas Docker repository
+Open a Terminal prompt to pull the Pytheas Docker image
 ```
 docker pull ldascenzo/pytheas:latest
 ```
@@ -90,12 +90,9 @@ Note that python3 instead of python may not be necessary if the default Python i
 Navigate within the Pytheas version directory (GUI or CL) and launch the scripts with 
 ```pythonw pytheas_<script_name>.py```
 
-### Docker container
-Check the name of the newly pulled container under the column “NAMES”
-```docker container ls```
-
-Open a Bash shell within the container using the name you just recovered 
-```docker exec -it <container name> /bin/bash```
+### Docker image
+Open a Bash shell within the container 
+```docker run -it ldascenzo/pytheas /bin/bash```
 
 Navigate within the main Pytheas directory, in the command line version
 ```# cd pytheas/CL_version```
