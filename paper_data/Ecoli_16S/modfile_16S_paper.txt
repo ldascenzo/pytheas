@@ -1,0 +1,11 @@
+Molecule Position ID ID_ext Include
+16S.ecoli 527 j [mG] 2
+16S.ecoli 966 j [mG] 2
+16S.ecoli 967 m [m5C] 2
+16S.ecoli 1207 j [mG] 2
+16S.ecoli 1402 s [mCm] 2
+16S.ecoli 1407 m [m5C] 2
+16S.ecoli 1498 l [mU] 2
+16S.ecoli 1516 j [mG] 2
+16S.ecoli 1518 r [mmA] 2
+16S.ecoli 1519 r [mmA] 2
