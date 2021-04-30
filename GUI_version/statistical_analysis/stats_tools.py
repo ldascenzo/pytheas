@@ -349,7 +349,7 @@ def csv_output(df, lengths, per, Sp_cutoff, name_output, targets_with_decoys, is
     targets_w_decoys, targets_without_decoys = len(targets_w_decoys_df.index), len(targets_FDR_df.index) - len(
         targets_w_decoys_df.index)
     open("FDR_{}.csv".format(name_output), 'w').writelines(
-        ["# targets with competing decoys used for FDR,{}\n # targets without competing decoys used for FDR,{}\n"
+        ["# targets with competing decoys used for FDR,{}\n# targets without competing decoys used for FDR,{}\n"
          "Sequence lengths targets/decoys,{}\n".format(targets_w_decoys, targets_without_decoys, label_lengths),
          outcsv])
 

@@ -33,11 +33,11 @@ pd.options.mode.chained_assignment = None
 
 
 class Stats:
-    def __init__(self, targets, decoys, match, isotope, FDR, Sp_cutoff, sequence_lengths,
+    def __init__(self, targets, decoys, match, isotope, Sp_cutoff, sequence_lengths,
                  targets_without_decoys, box,
                  scatter_Sp_vs_dSp, scatterbox_lengths_z):
         self.targets_csv, self.decoys_csv, self.match_file, self.light_heavy = targets, decoys, match, isotope
-        self.FDR_input, self.lengths = FDR, sequence_lengths
+        self.lengths = sequence_lengths
         self.Sp_cutoff = Sp_cutoff
         self.targets_without_decoys, self.hide_info_box = targets_without_decoys, box
         self.scatter_Sp_dSp, self.scatterbox_lengths_z = scatter_Sp_vs_dSp, scatterbox_lengths_z

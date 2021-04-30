@@ -46,7 +46,7 @@ class Modifications:
             if self.modfile:
                 with open(self.modfile, 'r') as infile:
                     for line in infile:
-                        if line[0] != '\n':
+                        if line[0] != '\n' and line[0] != '#':
                             if line.split()[1].isdigit():
                                 profile_mod.append(line.replace('\n', ''))
 

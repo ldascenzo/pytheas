@@ -31,13 +31,13 @@ H_mass, neutron_mass = 1.007825032, 1.008665
 
 class Match:
     def __init__(self, digest, mgf, isotope, MS1_mzmin, MS1_mzmax, MS2_mzmin, MS2_mzmax, MS1_ppm, MS2_ppm,
-                 MS1_offset_ppm, MS2_offset_ppm, seq_length_FDR, MS2_intensity_min, MS2_peaks_max, precursor_removal,
+                 MS1_offset_ppm, MS2_offset_ppm, MS2_intensity_min, MS2_peaks_max, precursor_removal,
                  loss_removal, beta, alpha, MS2_cutoff_normalized_int, isotopologues, charges_mgf, FDR_isotopes,
                  targets_with_decoys):
         self.digest_file, self.mgf_file, self.light_heavy = digest, mgf, isotope
         self.MS1_mzlow, self.MS1_mzhigh, self.MS2_mzlow, self.MS2_mzhigh = MS1_mzmin, MS1_mzmax, MS2_mzmin, MS2_mzmax
         self.MS1_ppm, self.MS2_ppm, self.MS1_ppm_offset = round(MS1_ppm, 1), round(MS2_ppm, 1), round(MS1_offset_ppm, 1)
-        self.MS2_ppm_offset, self.sequence_length_FDR = round(MS2_offset_ppm, 1), seq_length_FDR
+        self.MS2_ppm_offset = round(MS2_offset_ppm, 1)
         self.MS2_peak_int_min, self.MS2_peak_num_max = MS2_intensity_min, MS2_peaks_max
         self.precursor_window_removal, self.losses_window_removal = precursor_removal, loss_removal
         self.beta_increment, self.alpha, self.MS2_normint_cutoff = beta, alpha, MS2_cutoff_normalized_int
@@ -504,7 +504,7 @@ class Match:
                                        prec_mass + ppm_range(prec_mass, self.MS1_ppm_offset) - ppm_range(prec_mass +
                                                                                                          ppm_range(
                                                                                                              prec_mass,
-                                                                                                             self.MS1_ppm_offset),
+                                                                                                                       self.MS1_ppm_offset),
                                                                                                          self.MS1_ppm) <= np.float64(
                                            k.split('_')[0]) <= prec_mass +
                                        ppm_range(prec_mass, self.MS1_ppm_offset) + ppm_range(
@@ -887,15 +887,10 @@ class Match:
         else:
             targets_with_decoys = 'n'
 
-        if self.sequence_length_FDR == 'all':
-            sequence_lengths = 'all'
-        else:
-            sequence_lengths = [int(x) for x in self.sequence_length_FDR.split(',')]
-
         # Output specific for the statistical analysis
         stats.csv_output(
             stats.filter_data(stats.input_data("match_output_" + mgf_name + ".txt", 'n', 'y'), 'y', 'Sp'),
-            sequence_lengths, 'n', 0, mgf_name, targets_with_decoys,
+            'all', 'n', 0, mgf_name, targets_with_decoys,
             self.FDR_light_heavy)
 
         print("\nDone! Output file(s) -> {} {} {} {} {}".format("match_output_" + mgf_name + ".txt",

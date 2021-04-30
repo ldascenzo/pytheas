@@ -135,12 +135,13 @@ def check_Da_nucleotides(alphabet_file):
                 nt_pairs_warning.append((key1, key2, str(round(abs(dic[key1] - dic[key2]), 3)) + " Da"))
                 nt_pairs.append((key1, key2))
 
-    print(
-        "WARNING!!! The following nucleotide couples from the alphabet file {} have masses within 0.5 Da, "
-        "which may be an issue for discrimination of MS2 fragments. "
-        "Please run again the script with the --mz_consolidation option set as 'y' and choose "
-        "a ppm threshold with --ppm_consolidation for "
-        "isobaric/close fragments to be consolidated \n{}\n\n".format(alphabet_file, nt_pairs_warning))
+    # Fix the warning to include only pairs of nucleotides used in the digest, disabled until then
+    #print(
+    #    "WARNING!!! The following nucleotide couples from the alphabet file {} have masses within 0.5 Da, "
+    #    "which may be an issue for discrimination of MS2 fragments. "
+    #    "Please run again the script with the --mz_consolidation option set as 'y' and choose "
+    #    "a ppm threshold with --ppm_consolidation for "
+    #    "isobaric/close fragments to be consolidated \n{}\n\n".format(alphabet_file, nt_pairs_warning))
 
 
 def digest_lines(digest_input):

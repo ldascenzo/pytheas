@@ -20,8 +20,8 @@ from collections import defaultdict
 
 
 class Consolidation:
-    def __init__(self, MS_level, min_length):
-        self.MS_level, self.min_length = MS_level, min_length
+    def __init__(self):
+        self.MS_level, self.min_length = 'MS2', 3
 
     def fragment_list(self):
         """
