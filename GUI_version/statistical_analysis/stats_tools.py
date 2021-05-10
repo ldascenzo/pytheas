@@ -314,6 +314,11 @@ def csv_output(df, lengths, per, Sp_cutoff, name_output, targets_with_decoys, is
     if not np.isnan(decoy_max):
         step = round(decoy_max / 100, 3)
 
+        # Add a control for when the highest rank 1 decoy has a low score and the step turns out to be 0, crashing the
+        # script
+        if step == 0:
+            step = 0.01
+
         d = {'Sp_cutoff': [], 'top_match_targets(t)': [], 'top_unique_targets': [], 'top_match_decoys(D)': [],
              'FDR(D/t)': [], 'FDR(%)': []}
 
