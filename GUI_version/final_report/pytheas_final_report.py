@@ -51,7 +51,7 @@ def pytheas_output():
 
     output = Pytheas_Output(args.Match_file, args.Sp_minimum, args.dSp_maximum, args.output_decoys,
                             args.modified_only, args.unique_positions_only, args.rank_maximum,
-                            args.remove_redundant_SeqX_matches, args.dSp2_minimum_cutoff, args.MS1_ppm_cutoff)
+                            args.remove_redundant_SeqX_matches, args.dSp2_minimum, args.MS1_ppm_cutoff)
 
     output.parse_match_file()
 
