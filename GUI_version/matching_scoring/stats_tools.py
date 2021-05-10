@@ -314,6 +314,11 @@ def csv_output(df, lengths, per, Sp_cutoff, name_output, targets_with_decoys, is
     if not np.isnan(decoy_max):
         step = round(decoy_max / 100, 3)
 
+        # Add a control for when the highest rank 1 decoy has a low score and the step turns out to be 0, crashing the
+        # script
+        if step == 0:
+            step = 0.01
+
         d = {'Sp_cutoff': [], 'top_match_targets(t)': [], 'top_unique_targets': [], 'top_match_decoys(D)': [],
              'FDR(D/t)': [], 'FDR(%)': []}
 
@@ -349,7 +354,7 @@ def csv_output(df, lengths, per, Sp_cutoff, name_output, targets_with_decoys, is
     targets_w_decoys, targets_without_decoys = len(targets_w_decoys_df.index), len(targets_FDR_df.index) - len(
         targets_w_decoys_df.index)
     open("FDR_{}.csv".format(name_output), 'w').writelines(
-        ["# targets with competing decoys used for FDR,{}\n # targets without competing decoys used for FDR,{}\n"
+        ["# targets with competing decoys used for FDR,{}\n# targets without competing decoys used for FDR,{}\n"
          "Sequence lengths targets/decoys,{}\n".format(targets_w_decoys, targets_without_decoys, label_lengths),
          outcsv])
 
@@ -857,6 +862,7 @@ def hist_second_dSp(df, lengths, Sp_cutoff, targets_with_decoys, info_box):
         # Place a box with info on the graph about the total number of points and parameters
         if info_box == 'y':
             textstr = ('\n'.join(('Sp cutoff [targets] = {}'.format(Sp_cutoff),
+                                  'Targets w/ decoys = {}'.format(targets_with_decoys),
                                   'sequence lengths = {}'.format(label_lengths),
                                   r'$\mu(t)=%.2f$ M(t)=%.2f $\sigma(t)=%.2f$' % (mean_t, median_t, std_t,))))
             props = dict(boxstyle='round, pad = 1', facecolor='palegreen', edgecolor='green', alpha=0.5)
