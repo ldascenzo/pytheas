@@ -175,6 +175,7 @@ class Pytheas_Output:
             df = df.astype({"MS1_offset(ppm)": float})
             df = df[abs(df['MS1_offset(ppm)']) <= abs(self.MS1_offset)]
 
+        df.reset_index(drop=True, inplace=True)
         df.index += 1
 
         return df.to_csv('final_report_{}.csv'.format(
