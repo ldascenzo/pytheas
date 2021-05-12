@@ -1,7 +1,7 @@
-#!/usr/bin/python3
+8#!/usr/bin/python3
 
 """
-Last update: March 2021
+Last update: May 2021
 Author: Luigi D'Ascenzo, PhD - The Scripps Research Institute, La Jolla (CA)
 Contact info: dascenzoluigi@gmail.com
 GitHub project repository: https://github.com/ldascenzo/pytheas
@@ -116,7 +116,7 @@ def in_silico_digest():
                        args.MS1_charges_table,
                        args.MS2_charges_table, args.MS1_mz_min, args.MS1_mz_max, args.MS2_mz_min, args.MS2_mz_max,
                        args.CID_HCD_series, args.SeqX_consolidation, args.MS1_SeqX,
-                       args.MS2_SeqX)
+                       args.MS2_SeqX, args.RNA_sequences)
     calc_mass.final_output()
 
 

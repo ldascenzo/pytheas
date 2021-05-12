@@ -167,9 +167,9 @@ class Enzyme_cleavage:
         # The header info differ based on the choice of nonspecific or specific cleavage
         if self.enzyme == 'nonspecific':
             starting_lines = ["#ENZYME {}\n#NONSPECIFIC_MIN_LENGTH {}\n#NONSPECIFIC_MAX_LENGTH {}"
-                              "\n#CLEAVED_FRAGMENTS_5'CHEMISTRY"
-                              " {}\n#CLEAVED_FRAGMENTS_3'CHEMISTRY {}\n#WHOLE_RNA_5'CHEMISTRY {}"
-                              "\n#WHOLE_RNA_3'CHEMISTRY {}\nmolecule sequence residue_start residue_end miss "
+                              "\n#CLEAVED_RNA_5'CHEMISTRY"
+                              " {}\n#CLEAVED_RNA_3'CHEMISTRY {}\n#RNA_5'CHEMISTRY {}"
+                              "\n#RNA_3'CHEMISTRY {}\nmolecule sequence residue_start residue_end miss "
                               "5'end 3'end\n".format(self.enzyme,
                                                        self.nonspecific_min_length,
                                                        self.nonspecific_max_length,
@@ -178,9 +178,9 @@ class Enzyme_cleavage:
                                                        ','.join(self.RNA_5end_chem),
                                                        ','.join(self.RNA_3end_chem))]
         else:
-            starting_lines = ["#ENZYME {}\n#MISSED_CLEAVAGES {}\n#CLEAVED_FRAGMENTS_5'CHEMISTRY {}\n"
-                              "#CLEAVED_FRAGMENTS_3'CHEMISTRY {}\n#WHOLE_RNA_5'CHEMISTRY {}"
-                              "\n#WHOLE_RNA_3'CHEMISTRY {}\nmolecule sequence residue_start residue_end miss "
+            starting_lines = ["#ENZYME {}\n#MISSED_CLEAVAGES {}\n#CLEAVED_RNA_5'CHEMISTRY {}\n"
+                              "#CLEAVED_RNA_3'CHEMISTRY {}\n#RNA_5'CHEMISTRY {}"
+                              "\n#RNA_3'CHEMISTRY {}\nmolecule sequence residue_start residue_end miss "
                               "5'end 3'end\n".format(self.enzyme, self.miss,
                                                        ','.join(self.cleaved_fragments_5end_chem),
                                                        ','.join(self.cleaved_fragments_3end_chem),

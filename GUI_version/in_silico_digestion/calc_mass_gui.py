@@ -15,7 +15,7 @@ More information on the elemental masses, CID fragmentation of RNA and the avail
 in the Digest section of Pytheas manual.
 
 ***OUTPUT***
-1) Digest_MS2.txt (or MS1 if requested) -> in silico digest library file ready to be used for matching, with all
+1) Digest_[name_fasta].txt -> in silico digest library file ready to be used for matching, with all
                  the info on each precursor ion and its derived fragmentation ions
 """
 
@@ -27,6 +27,8 @@ import pandas as pd
 from shutil import move
 
 import consolidate_tools as ct
+import ntpath
+import platform
 
 ##########
 # ELEMENT MASS DICTIONARY
@@ -50,13 +52,14 @@ ele_mass = {"C": 12.0000000, "H": 1.007825032, "N": 14.0030740044, "O": 15.99491
 class Masses:
     def __init__(self, ion_mode, light_alphabet, heavy_alphabet, MS1_charge_tabl, MS2_charge_tabl, MS1_mzlow,
                  MS1_mzhigh, MS2_mzlow, MS2_mzhigh, CID_series, mz_consolidation, MS1_consolidation_ppm,
-                 MS2_consolidation_ppm):
+                 MS2_consolidation_ppm, fasta_name):
         self.ion_mode, self.nts_alphabet_light, self.nts_alphabet_heavy = ion_mode, light_alphabet, heavy_alphabet
         self.MS1_charges, self.MS2_charges = MS1_charge_tabl, MS2_charge_tabl
         self.MS1_mzlow, self.MS1_mzhigh, self.MS2_mzlow, self.MS2_mzhigh = MS1_mzlow, MS1_mzhigh, MS2_mzlow, MS2_mzhigh
         self.CID_series, self.mz_consolidation = CID_series, mz_consolidation
         self.MS1_consolidation_ppm = round(MS1_consolidation_ppm, 1)
         self.MS2_consolidation_ppm = round(MS2_consolidation_ppm, 1)
+        self.fasta_name = fasta_name
 
     def __controls(self):
         """
@@ -688,25 +691,25 @@ class Masses:
         elif self.ion_mode == "-":
             header_lines.append("#ION_MODE negative\n")
 
-        header_lines.append("#CID_SERIES " + " ".join(list(set(self.CID_series))) + "\n")
+        header_lines.append("#CID_SERIES " + " ".join(sorted(list(set(self.CID_series)))) + "\n")
         header_lines.append("#MZLOW_MS2 " + str(self.MS2_mzlow) + "\n")
         header_lines.append("#MZHIGH_MS2 " + str(self.MS2_mzhigh) + "\n")
         header_lines.append("#MZLOW_MS1 " + str(self.MS1_mzlow) + "\n")
         header_lines.append("#MZHIGH_MS1 " + str(self.MS1_mzhigh) + "\n")
-        header_lines.append("#NTS_ALPHABET_LIGHT " + str(self.nts_alphabet_light) + "\n")
+        header_lines.append("#ELEMENTAL_COMPOSITION_LIGHT " + str(self.nts_alphabet_light) + "\n")
 
         if self.nts_alphabet_heavy:
-            header_lines.append("#NTS_ALPHABET_HEAVY " + str(self.nts_alphabet_heavy) + "\n")
+            header_lines.append("#ELEMENTAL_COMPOSITION_HEAVY " + str(self.nts_alphabet_heavy) + "\n")
 
-        header_lines.append("#MZ_CONSOLIDATION " + str(self.mz_consolidation) + "\n")
+        header_lines.append("#SEQX_CONSOLIDATION " + str(self.mz_consolidation) + "\n")
 
         if self.mz_consolidation:
-            header_lines.append("#MS1_PPM_CONSOLIDATION " + str(self.MS1_consolidation_ppm) + "\n")
-            header_lines.append("#MS2_PPM_CONSOLIDATION " + str(self.MS2_consolidation_ppm) + "\n")
+            header_lines.append("#MS1_SEQX_PPM " + str(self.MS1_consolidation_ppm) + "\n")
+            header_lines.append("#MS2_SEQX_PPM " + str(self.MS2_consolidation_ppm) + "\n")
 
         for line in input_file:
 
-            if line[0] == "#":
+            if line[0] == "#" and "MIN_LENGTH_CONSOLIDATE" not in line:
                 header_lines.append(line)
 
         header_lines.append(
@@ -741,7 +744,7 @@ class Masses:
         if os.path.exists("./output.3.MS2"):
             # Create two new dictionaries for a-B fragments (nucleobases)
             self.nts_dic_onlyB_light = nts_mass(self.read_excel_input(self.nts_alphabet_light))[1]
-            
+
             if self.nts_alphabet_heavy:
                 self.nts_dic_onlyB_heavy = nts_mass(self.read_excel_input(self.nts_alphabet_heavy))[1]
 
@@ -786,15 +789,25 @@ class Masses:
 
             self.MS2_charge_table = charge_table(self.MS2_charges)
 
-            # Write the output lines in the output file Digest_MS2.txt
+            # Write the output lines in the output file
             body_output = self.final_lines_MS2(lines_MS2)
 
             # Add the info on unique sequences and decoys in the header
             final_header = (["#TARGETS {}\n#DECOYS {}\n".format(tot_targets, tot_decoys)]
                             + self.header_info_MS2(open(os.getcwd() + "/output.3.MS2", 'r')))
 
-            open(os.getcwd() + "/Digest_MS2.txt", 'w').writelines(final_header + body_output)
-            out_files.append("Digest_MS2.txt")
+            # Separate the input files if multiple fasta files are selected, based on the running OS
+            if platform.system() == 'Windows':
+                fasta_input = self.fasta_name.split(';')
+
+            else:
+                fasta_input = self.fasta_name.split(':')
+
+            # Determine the output name from the input fasta file
+            output_name = filename_from_path(fasta_input[0])[:-4]
+
+            open(os.getcwd() + "/Digest_" + output_name + ".txt", 'w').writelines(final_header + body_output)
+            out_files.append("Digest_" + output_name + ".txt")
 
         else:
             print("WARNING! MS2 file output.3.MS2 from 3_consolidate.py is missing, MS2 digest will not be calculated")
@@ -802,23 +815,23 @@ class Masses:
         # m/z based consolidation, where nucleotides that in a particular alphabet are too close
         # in masses ppm to be indistinguishable in the matching, are reported as 'X' within their sequence
         if self.mz_consolidation:
-            digest_lines = ct.mz_consolidate(self.nts_alphabet_light, 'Digest_MS2.txt', 'light',
+            digest_lines = ct.mz_consolidate(self.nts_alphabet_light, 'Digest_' + output_name + '.txt', 'light',
                                              self.MS1_consolidation_ppm,
                                              self.MS2_consolidation_ppm, read_csv())
             if digest_lines:
                 open('test_consolidate.txt', 'w').writelines(digest_lines)
-                os.remove('./Digest_MS2.txt')
-                move('./test_consolidate.txt', './Digest_MS2.txt')
+                os.remove('./Digest_' + output_name + '.txt')
+                move('./test_consolidate.txt', './Digest_' + output_name + '.txt')
 
             if self.nts_alphabet_heavy:
-                digest_lines = ct.mz_consolidate(self.nts_alphabet_heavy, 'Digest_MS2.txt', 'heavy',
+                digest_lines = ct.mz_consolidate(self.nts_alphabet_heavy, 'Digest_' + output_name + '.txt', 'heavy',
                                                  self.MS1_consolidation_ppm,
                                                  self.MS2_consolidation_ppm, read_csv())
 
                 open('test_consolidate.txt', 'w').writelines(digest_lines)
-                os.remove('./Digest_MS2.txt')
-                move('./test_consolidate.txt', './Digest_MS2.txt')
-            print("m/z based consolidation COMPLETED!\n")
+                os.remove('./Digest_' + output_name + '.txt')
+                move('./test_consolidate.txt', './Digest_' + output_name + '.txt')
+            print("SeqX consolidation COMPLETED!\n")
 
         else:
             # Check if any combination of two nucleotides in the alphabet(s)
@@ -1036,3 +1049,8 @@ def inlines_MS2():
                 input_lines.append(line[:-1])
 
     return input_lines
+
+
+def filename_from_path(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)
