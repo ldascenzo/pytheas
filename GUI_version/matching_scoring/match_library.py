@@ -733,18 +733,19 @@ class Match:
         global MS1_hits, MS2_hits
         MS1_hits, MS2_hits, list_ion_rt = 0, 0, []
 
-        output_lines = ["#in_silico_digest " + self.digest_file + "\n#enzyme " + str(
-            enzyme) + "\n#mgf_file " + self.mgf_file + "\n#MS1_ppm " + str(self.MS1_ppm) + "\n#MS2_ppm " + str(
+        output_lines = ["#theoretical_digest " + self.digest_file + "\n#enzyme " + str(
+            enzyme) + "\n#MS_data " + self.mgf_file + "\n#isotopic_species " + self.light_heavy +
+                        "\n#MS1_ppm " + str(self.MS1_ppm) + "\n#MS2_ppm " + str(
             self.MS2_ppm) + "\n#MS1_offset_ppm " + str(self.MS1_ppm_offset) + "\n#MS2_offset_ppm " + str(
-            self.MS2_ppm_offset) + "\n#MS1_mzlow " + str(self.MS1_mzlow) + "\n#MS1_mzhigh " + str(
-            self.MS1_mzhigh) + "\n#MS2_mzlow " + str(self.MS2_mzlow) +
-                        "\n#MS2_mzhigh " + str(self.MS2_mzhigh) + "\n#MS2_peak_int_min " + str(
-            self.MS2_peak_int_min) + "\n#MS2_peak_num_max " + str(
-            self.MS2_peak_num_max) + "\n#precursor_window_removal " + str(
-            self.precursor_window_removal) + "\n#losses_window_removal " + str(self.losses_window_removal) +
-                        "\n#beta_increment " + str(self.beta_increment) + "\n#precursor_isotopologues " + str(
-            self.precursor_isotopologues) + "\n#MS2_normint_cutoff " + str(
-            self.MS2_normint_cutoff) + "\n#alpha " + str(self.alpha) + "\n"]
+            self.MS2_ppm_offset) + "\n#MS1_mz_minimum " + str(self.MS1_mzlow) + "\n#MS1_mz_maximum " + str(
+            self.MS1_mzhigh) + "\n#MS2_mz_minimum " + str(self.MS2_mzlow) +
+                        "\n#MS2_mz_maximum " + str(self.MS2_mzhigh) + "\n#MS2_abs_peak_intensity " + str(
+            self.MS2_peak_int_min) + "\n#MS2_peak_num_maximum " + str(
+            self.MS2_peak_num_max) + "\n#MS2_normint_cutoff " + str(self.MS2_normint_cutoff) +
+                        "\n#precursor_exclusion_window " + str(self.precursor_window_removal) +
+                        "\n#precursor_losses_exclusion_window " + str(self.losses_window_removal) +
+                        "\n#alpha " + str(self.alpha) + "\n#beta " + str(self.beta_increment) +
+                        "\n#precursor_isotopologues " + str(self.precursor_isotopologues) + "\n"]
         output_lines.append(
             "#MATCHES_HEADER:m/z(meas) RT m/z(theo) offset Sp dSp rank"
             " #MS2_matches isotope length charge sequence sequence_mod 5'-end 3'-end molecule_location"

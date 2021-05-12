@@ -36,11 +36,11 @@ def matching_scoring():
                         help='Number of the most intense MS2 peaks to be used for matching')
     parser.add_argument('--MS2_relative_peak_intensity', default=5, type=int,
                         help='Minimum relative intensity threshold for MS2 peaks. Normalization is done '
-                             'to the most intense non-precursor-derived peak')
+                             'following peak assignment for precursor and precursor ion losses')
     parser.add_argument('--precursor_exclusion_window', default=2.0, type=float,
-                        help='Mass range centered around the precursor ion m/z for MS2 peaks exclusion')
+                        help='Mass range (Da) set around m/z of the precursor ion for MS2 peaks exclusion')
     parser.add_argument('--precursor_losses_exclusion_window', default=1.5, type=float,
-                        help='Mass range centered around the precursor ion losses m/z for MS2 peaks exclusion')
+                        help='Mass range (Da) set around m/z of the precursor ion losses for MS2 peaks exclusion')
     parser.add_argument('--MS1_ppm', default=30, type=float,
                         help='Precursor ion matching tolerance in ppm')
     parser.add_argument('--MS2_ppm', default=50, type=float,
@@ -54,7 +54,7 @@ def matching_scoring():
     parser.add_argument('--alpha', default=0, type=float,
                         help='alpha parameter value in the scoring function')
     parser.add_argument('--FDR_isotopic_species', default='all', choices=['all', 'light', 'heavy'],
-                        help='Unlabeled (light) or isotopically labeled (heavy) sequences to use for FDR. '
+                        help='Unlabeled (light) or isotopically labeled (heavy) sequences to use for FDR estimation. '
                              'By default, both are included')
     parser.add_argument('--MS1_mz_minimum', default=400, type=int,
                         help='Minimum m/z value for precursor ion matching')
