@@ -49,7 +49,7 @@ def visualizer():
     parser.add_argument('--dSp2_minimum', default=0, type=float,
                         help='Minimum dSp2 score cutoff for matched sequences (default=0)')
     parser.add_argument('--MS1_ppm_cutoff', default=None, type=float,
-                        help='Precursor ion mass tolerance cutoff. Only matches with precursor ion m/z within'
+                        help='Precursor ion mass tolerance cutoff. Only matches with precursor ion m/z within '
                              'specified +- ppm window are included (default=no cutoff)')
     parser.add_argument('--MS2_peaks_number', default='all',
                         help='Number of most intense MS2 peaks in the spectra. By default all peaks are shown')
