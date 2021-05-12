@@ -33,12 +33,12 @@ def statistical_plots():
 
     # Optional Arguments
     parser.add_argument('--isotopic_species', default='all', choices=['light', 'heavy', 'all'],
-                        help='Unlabeled (light) or isotopically labeled target/decoy sequences to include in the '
-                             'statistical plots. By default, both are included')
+                        help='Unlabeled (light) or isotopically labeled (heavy) targets/decoys to include in the '
+                             'analysis. By default, both are included')
     parser.add_argument('--Sp_cutoff', default=0, type=float,
-                        help='Minimum Sp score cutoff for target sequences to use for statistical analysis')
+                        help='Minimum Sp score cutoff for target sequences included in the statistical analysis')
     parser.add_argument('--sequence_lengths', default='all',
-                        help='Sequence length values to use for statistical analysis. '
+                        help='Only targets/decoys of the specified nucleotide length are included in the analysis. '
                              'Input multiple values separated by commas (default = all)')
     parser.add_argument('--targets_without_decoys', action='store_true', default=False,
                         help='Use all the available targets for statistical analysis and FDR re-calculation. '
@@ -46,9 +46,9 @@ def statistical_plots():
     parser.add_argument('--hide_box_graphs', action='store_true', default=False,
                         help='Hide descriptive statistics and parameters summary box')
     parser.add_argument('--Sp_vs_dSp_plot', action='store_true', default=False,
-                        help='Generate an additional Sp vs dSp scatter for target and decoy sequences')
+                        help='Generate an additional Sp vs dSp scatter plot for target and decoy sequences')
     parser.add_argument('--Sp_length_charge_plot', action='store_true', default=False,
-                        help='Generate an additional scatter and box plots of Sp vs sequence_length_charge for'
+                        help='Generate an additional scatter and box plots of Sp vs sequence_length_charge for '
                              'target and decoy sequences')
 
     ####################################################
