@@ -1052,17 +1052,19 @@ def output(match_dic=consolidate_match()):
                     n_ms2_ions = n_calc(ion_rt[1][match][7:], mod_detection(ion_rt[1][match][2]))
 
                     # Correct the offset for matches of isotopologues and mark them with a *
-                    calculated_offset = ppm_offset(ion_rt[0].split('_')[0], np.float64(match.split('_')[0]) + ppm_range(
-                        np.float64(match.split('_')[0]), args.MS1_ppm_offset))
+                    calculated_offset = ppm_offset(match.split('_')[0], np.float64(ion_rt[0].split('_')[0]) + ppm_range(
+                        np.float64(ion_rt[0].split('_')[0]), args.MS1_ppm_offset))
                     if abs(calculated_offset) > args.MS1_ppm:
                         corrected_offset_minus = ppm_offset(
-                            np.float64(ion_rt[0].split('_')[0]) - neutron_mass / abs(int(match.split('_')[2])),
-                            np.float64(match.split('_')[0]) + ppm_range(np.float64(match.split('_')[0]),
-                                                                        args.MS1_ppm_offset))
+                            np.float64(match.split('_')[0]), np.float64(ion_rt[0].split('_')[0])
+                                                             - neutron_mass / abs(int(match.split('_')[2])) +
+                                                             ppm_range(np.float64(ion_rt[0].split('_')[0]),
+                                                                       args.MS1_ppm_offset))
                         corrected_offset_plus = ppm_offset(
-                            np.float64(ion_rt[0].split('_')[0]) + neutron_mass / abs(int(match.split('_')[2])),
-                            np.float64(match.split('_')[0]) + ppm_range(np.float64(match.split('_')[0]),
-                                                                        args.MS1_ppm_offset))
+                            np.float64(match.split('_')[0]), np.float64(ion_rt[0].split('_')[0])
+                                                             + neutron_mass / abs(int(match.split('_')[2])) +
+                                                             ppm_range(np.float64(ion_rt[0].split('_')[0]),
+                                                                       args.MS1_ppm_offset))
 
                         if abs(corrected_offset_plus) > abs(corrected_offset_minus):
                             corrected_offset = corrected_offset_minus
