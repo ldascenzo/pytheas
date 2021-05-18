@@ -13,6 +13,7 @@ output include FDR estimation and csv files containing all the targets and decoy
 More details about the algorithm, the scoring function and the output can be found within Pytheas paper and the manual.
 
 ***OPTIONS***
+***OPTIONS***
 --digest_file -> Digest file to be used for matching obtained by the script 4_calc_mass.py. File has to be located
 in the same directory of the script
 --mgf_file -> mgf format file to be used for matching vs the digest. File has to be located in the same directory of
@@ -1054,15 +1055,20 @@ def output(match_dic=consolidate_match()):
                     calculated_offset = ppm_offset(ion_rt[0].split('_')[0], np.float64(match.split('_')[0]) + ppm_range(
                         np.float64(match.split('_')[0]), args.MS1_ppm_offset))
                     if abs(calculated_offset) > args.MS1_ppm:
-                        corrected_offset = ppm_offset(
-                            np.float64(ion_rt[0].split('_')[0]) - neutron_mass / int(match.split('_')[2]),
+                        corrected_offset_minus = ppm_offset(
+                            np.float64(ion_rt[0].split('_')[0]) - neutron_mass / abs(int(match.split('_')[2])),
                             np.float64(match.split('_')[0]) + ppm_range(np.float64(match.split('_')[0]),
                                                                         args.MS1_ppm_offset))
-                        if abs(corrected_offset) > args.MS1_ppm:
-                            corrected_offset = ppm_offset(
-                                np.float64(ion_rt[0].split('_')[0]) + neutron_mass / int(match.split('_')[2]),
-                                np.float64(match.split('_')[0]) + ppm_range(np.float64(match.split('_')[0]),
-                                                                            args.MS1_ppm_offset))
+                        corrected_offset_plus = ppm_offset(
+                            np.float64(ion_rt[0].split('_')[0]) + neutron_mass / abs(int(match.split('_')[2])),
+                            np.float64(match.split('_')[0]) + ppm_range(np.float64(match.split('_')[0]),
+                                                                        args.MS1_ppm_offset))
+
+                        if abs(corrected_offset_plus) > abs(corrected_offset_minus):
+                            corrected_offset = corrected_offset_minus
+                        else:
+                            corrected_offset = corrected_offset_plus
+
                         corrected_offset = str(corrected_offset) + '*'
 
                     else:
@@ -1195,10 +1201,10 @@ if __name__ == "__main__":
     # Write a log file with statistics on matching hits
     open(os.getcwd() + "/log.txt", 'w').writelines(log_file())
 
-    if args.sequence_length_FDR == 'all':
+    if args.sequence_lengths_FDR == 'all':
         sequence_lengths = 'all'
     else:
-        sequence_lengths = [int(x) for x in args.sequence_length_FDR.split(',')]
+        sequence_lengths = [int(x) for x in args.sequence_lengths_FDR.split(',')]
 
     # Output specific for the statistical analysis
     stats.csv_output(
