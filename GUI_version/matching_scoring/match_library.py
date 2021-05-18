@@ -779,15 +779,20 @@ class Match:
                                                        np.float64(match.split('_')[0]) + ppm_range(
                                                            np.float64(match.split('_')[0]), self.MS1_ppm_offset))
                         if abs(calculated_offset) > self.MS1_ppm:
-                            corrected_offset = ppm_offset(
-                                np.float64(ion_rt[0].split('_')[0]) - neutron_mass / int(match.split('_')[2]),
+                            corrected_offset_minus = ppm_offset(
+                                np.float64(ion_rt[0].split('_')[0]) - neutron_mass / abs(int(match.split('_')[2])),
                                 np.float64(match.split('_')[0]) + ppm_range(np.float64(match.split('_')[0]),
                                                                             self.MS1_ppm_offset))
-                            if abs(corrected_offset) > self.MS1_ppm:
-                                corrected_offset = ppm_offset(
-                                    np.float64(ion_rt[0].split('_')[0]) + neutron_mass / int(match.split('_')[2]),
-                                    np.float64(match.split('_')[0]) + ppm_range(np.float64(match.split('_')[0]),
-                                                                                self.MS1_ppm_offset))
+                            corrected_offset_plus = ppm_offset(
+                                np.float64(ion_rt[0].split('_')[0]) + neutron_mass / abs(int(match.split('_')[2])),
+                                np.float64(match.split('_')[0]) + ppm_range(np.float64(match.split('_')[0]),
+                                                                            self.MS1_ppm_offset))
+
+                            if abs(corrected_offset_plus) > abs(corrected_offset_minus):
+                                corrected_offset = corrected_offset_minus
+                            else:
+                                corrected_offset = corrected_offset_plus
+
                             corrected_offset = str(corrected_offset) + '*'
 
                         else:
@@ -963,7 +968,7 @@ def ppm_range(value, ppm):
     """
     Calculate incertitude on MS1/MS2 masses equivalent to given ppm
     """
-    return ppm / 1000000 * value
+    return round(ppm / 1000000 * value, 5)
 
 
 def ppm_offset(measured_mass, theoretical_mass):
