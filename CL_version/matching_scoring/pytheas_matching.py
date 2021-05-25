@@ -154,6 +154,7 @@ if args.NA_removal == 'y':
 else:
     NA_mass = H_mass
 
+MS1_ppm_offset, MS2_ppm_offset = -args.MS1_ppm_offset, -args.MS2_ppm_offset
 
 def score_calc_5(sumI, n, beta_a_b, beta_aB, beta_c_d, beta_w_x, beta_y_z_P, gamma, L, sumI_all):
     """
@@ -223,7 +224,7 @@ def ppm_offset(measured_mass, theoretical_mass):
     Calculate the ppm offset between matching m/z values for MS1/MS2 ions
     """
     difference = np.float64(measured_mass) - np.float64(theoretical_mass)
-    ppm_offset = difference / np.float64(theoretical_mass) * 1000000
+    ppm_offset = difference / np.float64(measured_mass) * 1000000
 
     return round(ppm_offset, 1)
 
@@ -276,7 +277,7 @@ def normalize_int_MS2(mgf_peaks, match_peaks, digest):
 
                         # Add the offset mass to the mz_digest
                         mz_digest, mz_mgf, charge = np.float64(peak.split(":")[-1]) + ppm_range(
-                            np.float64(peak.split(":")[-1]), args.MS2_ppm_offset), np.float64(f), int(
+                            np.float64(peak.split(":")[-1]), MS2_ppm_offset), np.float64(f), int(
                             re.findall(r'\d+', peak.split("(")[1].split(")")[0])[0])
 
                         # Check if the mz of the mgf from the highest are not peaks for M-xx ions (within ppm values)
@@ -360,7 +361,7 @@ def exclusion_windows_matching(match_peaks):
                         for mass_loss in mass_losses_list:
 
                             # Add the MS2 offset
-                            mass_loss_offseted = mass_loss + ppm_range(mass_loss, args.MS2_ppm_offset)
+                            mass_loss_offseted = mass_loss + ppm_range(mass_loss, MS2_ppm_offset)
 
                             # Check and discard any sequencing ion is found in the M-xx exclusion window
                             if mass_loss_offseted - args.losses_window_removal <= \
@@ -703,11 +704,11 @@ def mgf_dic(mgf_file=open(os.getcwd() + "/" + args.mgf_file, 'r'), mz_freeb=mz_f
             # Add MS2 ions of free bases even if they are outside the specified MS2 window
             else:
                 for ion in mz_freeb:
-                    if (np.float64(k) >= np.float64(ion) + ppm_range(np.float64(ion), args.MS2_ppm_offset) - ppm_range(
-                            np.float64(ion) + ppm_range(np.float64(ion), args.MS2_ppm_offset), args.MS2_ppm) and
+                    if (np.float64(k) >= np.float64(ion) + ppm_range(np.float64(ion), MS2_ppm_offset) - ppm_range(
+                            np.float64(ion) + ppm_range(np.float64(ion), MS2_ppm_offset), args.MS2_ppm) and
                             np.float64(k) <= np.float64(ion) + ppm_range(np.float64(ion),
-                                                                         args.MS2_ppm_offset) + ppm_range(
-                                np.float64(ion) + ppm_range(np.float64(ion), args.MS2_ppm_offset), args.MS2_ppm)):
+                                                                         MS2_ppm_offset) + ppm_range(
+                                np.float64(ion) + ppm_range(np.float64(ion), MS2_ppm_offset), args.MS2_ppm)):
                         lista.append([k, d[key][k]])
                         break
 
@@ -747,25 +748,25 @@ def matching(digest_dic=dig_dic, mgf_dic=mgf_dic()):
             # The charges in the mgf file are used for matching if specified by the user
             if args.use_charges_mgf == 'y':
                 prec_match = (dict((k, v) for k, v in digest_dic.items() if
-                                   prec_mass + ppm_range(prec_mass, args.MS1_ppm_offset) - ppm_range(prec_mass +
+                                   prec_mass + ppm_range(prec_mass, MS1_ppm_offset) - ppm_range(prec_mass +
                                                                                                      ppm_range(
                                                                                                          prec_mass,
-                                                                                                         args.MS1_ppm_offset),
+                                                                                                         MS1_ppm_offset),
                                                                                                      args.MS1_ppm) <=
                                    np.float64(k.split('_')[0]) <= prec_mass +
-                                   ppm_range(prec_mass, args.MS1_ppm_offset) + ppm_range(
-                                       prec_mass + ppm_range(prec_mass, args.MS1_ppm_offset),
+                                   ppm_range(prec_mass, MS1_ppm_offset) + ppm_range(
+                                       prec_mass + ppm_range(prec_mass, MS1_ppm_offset),
                                        args.MS1_ppm) and prec_charge == int(k.split('_')[2])))
             else:
                 prec_match = (dict((k, v) for k, v in digest_dic.items() if
-                                   prec_mass + ppm_range(prec_mass, args.MS1_ppm_offset) - ppm_range(prec_mass +
+                                   prec_mass + ppm_range(prec_mass, MS1_ppm_offset) - ppm_range(prec_mass +
                                                                                                      ppm_range(
                                                                                                          prec_mass,
-                                                                                                         args.MS1_ppm_offset),
+                                                                                                         MS1_ppm_offset),
                                                                                                      args.MS1_ppm) <=
                                    np.float64(k.split('_')[0]) <= prec_mass +
-                                   ppm_range(prec_mass, args.MS1_ppm_offset) +
-                                   ppm_range(prec_mass + ppm_range(prec_mass, args.MS1_ppm_offset), args.MS1_ppm)))
+                                   ppm_range(prec_mass, MS1_ppm_offset) +
+                                   ppm_range(prec_mass + ppm_range(prec_mass, MS1_ppm_offset), args.MS1_ppm)))
 
 
         else:
@@ -773,69 +774,69 @@ def matching(digest_dic=dig_dic, mgf_dic=mgf_dic()):
             # The charges in the mgf file are used for matching if specified by the user
             if args.use_charges_mgf == 'y':
                 prec_match = (dict((k, v) for k, v in digest_dic.items() if prec_charge == int(k.split('_')[2])
-                                   and ((prec_mass + ppm_range(prec_mass, args.MS1_ppm_offset) - ppm_range(prec_mass +
+                                   and ((prec_mass + ppm_range(prec_mass, MS1_ppm_offset) - ppm_range(prec_mass +
                                                                                                            ppm_range(
                                                                                                                prec_mass,
-                                                                                                               args.MS1_ppm_offset),
+                                                                                                               MS1_ppm_offset),
                                                                                                            args.MS1_ppm) <= np.float64(
                     k.split('_')[0])
-                                         <= prec_mass + ppm_range(prec_mass, args.MS1_ppm_offset) + ppm_range(
+                                         <= prec_mass + ppm_range(prec_mass, MS1_ppm_offset) + ppm_range(
                             prec_mass +
-                            ppm_range(prec_mass, args.MS1_ppm_offset), args.MS1_ppm)) or (prec_mass +
+                            ppm_range(prec_mass, MS1_ppm_offset), args.MS1_ppm)) or (prec_mass +
                                                                                           neutron_mass / abs(
-                            prec_charge) + ppm_range(prec_mass, args.MS1_ppm_offset) -
+                            prec_charge) + ppm_range(prec_mass, MS1_ppm_offset) -
                                                                                           ppm_range(
                                                                                               prec_mass + ppm_range(
                                                                                                   prec_mass,
-                                                                                                  args.MS1_ppm_offset),
+                                                                                                  MS1_ppm_offset),
                                                                                               args.MS1_ppm) <=
                                                                                           np.float64(k.split('_')[
                                                                                                          0]) <= prec_mass + neutron_mass / abs(
                             prec_charge) +
                                                                                           ppm_range(prec_mass,
-                                                                                                    args.MS1_ppm_offset) + ppm_range(
+                                                                                                    MS1_ppm_offset) + ppm_range(
                             prec_mass +
-                            ppm_range(prec_mass, args.MS1_ppm_offset), args.MS1_ppm)) or (prec_mass -
+                            ppm_range(prec_mass, MS1_ppm_offset), args.MS1_ppm)) or (prec_mass -
                                                                                           neutron_mass / abs(
-                            prec_charge) + ppm_range(prec_mass, args.MS1_ppm_offset) -
+                            prec_charge) + ppm_range(prec_mass, MS1_ppm_offset) -
                                                                                           ppm_range(
                                                                                               prec_mass + ppm_range(
                                                                                                   prec_mass,
-                                                                                                  args.MS1_ppm_offset),
+                                                                                                  MS1_ppm_offset),
                                                                                               args.MS1_ppm) <=
                                                                                           np.float64(k.split('_')[
                                                                                                          0]) <= prec_mass - neutron_mass / abs(
                             prec_charge) +
                                                                                           ppm_range(prec_mass,
-                                                                                                    args.MS1_ppm_offset) + ppm_range(
+                                                                                                    MS1_ppm_offset) + ppm_range(
                             prec_mass +
-                            ppm_range(prec_mass, args.MS1_ppm_offset), args.MS1_ppm)))))
+                            ppm_range(prec_mass, MS1_ppm_offset), args.MS1_ppm)))))
             else:
                 prec_match = (dict((k, v) for k, v in digest_dic.items() if
-                                   ((prec_mass + ppm_range(prec_mass, args.MS1_ppm_offset) -
-                                     ppm_range(prec_mass + ppm_range(prec_mass, args.MS1_ppm_offset), args.MS1_ppm) <=
+                                   ((prec_mass + ppm_range(prec_mass, MS1_ppm_offset) -
+                                     ppm_range(prec_mass + ppm_range(prec_mass, MS1_ppm_offset), args.MS1_ppm) <=
                                      np.float64(k.split('_')[0]) <= prec_mass +
-                                     ppm_range(prec_mass, args.MS1_ppm_offset) + ppm_range(prec_mass +
+                                     ppm_range(prec_mass, MS1_ppm_offset) + ppm_range(prec_mass +
                                                                                            ppm_range(prec_mass,
-                                                                                                     args.MS1_ppm_offset),
+                                                                                                     MS1_ppm_offset),
                                                                                            args.MS1_ppm))
                                     or (prec_mass + neutron_mass / abs(prec_charge) +
-                                        ppm_range(prec_mass, args.MS1_ppm_offset) - ppm_range(prec_mass +
+                                        ppm_range(prec_mass, MS1_ppm_offset) - ppm_range(prec_mass +
                                                                                               ppm_range(prec_mass,
-                                                                                                        args.MS1_ppm_offset),
+                                                                                                        MS1_ppm_offset),
                                                                                               args.MS1_ppm) <=
                                         np.float64(k.split('_')[0]) <= prec_mass + neutron_mass / abs(prec_charge) +
-                                        ppm_range(prec_mass, args.MS1_ppm_offset) + ppm_range(prec_mass +
+                                        ppm_range(prec_mass, MS1_ppm_offset) + ppm_range(prec_mass +
                                                                                               ppm_range(prec_mass,
-                                                                                                        args.MS1_ppm_offset),
+                                                                                                        MS1_ppm_offset),
                                                                                               args.MS1_ppm))
                                     or (prec_mass - neutron_mass / abs(prec_charge) +
-                                        ppm_range(prec_mass, args.MS1_ppm_offset) -
-                                        ppm_range(prec_mass + ppm_range(prec_mass, args.MS1_ppm_offset), args.MS1_ppm)
+                                        ppm_range(prec_mass, MS1_ppm_offset) -
+                                        ppm_range(prec_mass + ppm_range(prec_mass, MS1_ppm_offset), args.MS1_ppm)
                                         <= np.float64(k.split('_')[0]) <= prec_mass - neutron_mass / abs(prec_charge) +
-                                        ppm_range(prec_mass, args.MS1_ppm_offset) + ppm_range(prec_mass +
+                                        ppm_range(prec_mass, MS1_ppm_offset) + ppm_range(prec_mass +
                                                                                               ppm_range(prec_mass,
-                                                                                                        args.MS1_ppm_offset),
+                                                                                                        MS1_ppm_offset),
                                                                                               args.MS1_ppm)))))
 
         # Loop among all precursor ions matching between digest and mgf file
@@ -853,10 +854,10 @@ def matching(digest_dic=dig_dic, mgf_dic=mgf_dic()):
 
                 # Matched only ions within specified MS2 charge, and within given ppm offset
                 add = (list([k, v] for k, v in mgf_dic[key].items() if ion_mass +
-                            ppm_range(ion_mass, args.MS2_ppm_offset) -
-                            ppm_range(ion_mass + ppm_range(ion_mass, args.MS2_ppm_offset), args.MS2_ppm) <=
-                            np.float64(k) <= ion_mass + ppm_range(ion_mass, args.MS2_ppm_offset) + ppm_range(
-                    ion_mass + ppm_range(ion_mass, args.MS2_ppm_offset), args.MS2_ppm)))
+                            ppm_range(ion_mass, MS2_ppm_offset) -
+                            ppm_range(ion_mass + ppm_range(ion_mass, MS2_ppm_offset), args.MS2_ppm) <=
+                            np.float64(k) <= ion_mass + ppm_range(ion_mass, MS2_ppm_offset) + ppm_range(
+                    ion_mass + ppm_range(ion_mass, MS2_ppm_offset), args.MS2_ppm)))
 
                 # Select only MS2 ions that have a relative intensity above a certain threshold
                 if add:
@@ -1052,19 +1053,21 @@ def output(match_dic=consolidate_match()):
                     n_ms2_ions = n_calc(ion_rt[1][match][7:], mod_detection(ion_rt[1][match][2]))
 
                     # Correct the offset for matches of isotopologues and mark them with a *
-                    calculated_offset = ppm_offset(match.split('_')[0], np.float64(ion_rt[0].split('_')[0]) + ppm_range(
-                        np.float64(ion_rt[0].split('_')[0]), args.MS1_ppm_offset))
+                    calculated_offset = ppm_offset(np.float64(ion_rt[0].split('_')[0]) + ppm_range(
+                        np.float64(ion_rt[0].split('_')[0]), MS1_ppm_offset), match.split('_')[0])
                     if abs(calculated_offset) > args.MS1_ppm:
                         corrected_offset_minus = ppm_offset(
-                            np.float64(match.split('_')[0]), np.float64(ion_rt[0].split('_')[0])
+                                                            np.float64(ion_rt[0].split('_')[0])
                                                              - neutron_mass / abs(int(match.split('_')[2])) +
                                                              ppm_range(np.float64(ion_rt[0].split('_')[0]),
-                                                                       args.MS1_ppm_offset))
+                                                                       MS1_ppm_offset),
+                                                            np.float64(match.split('_')[0]))
                         corrected_offset_plus = ppm_offset(
-                            np.float64(match.split('_')[0]), np.float64(ion_rt[0].split('_')[0])
+                                                            np.float64(ion_rt[0].split('_')[0])
                                                              + neutron_mass / abs(int(match.split('_')[2])) +
                                                              ppm_range(np.float64(ion_rt[0].split('_')[0]),
-                                                                       args.MS1_ppm_offset))
+                                                                       MS1_ppm_offset),
+                                                            np.float64(match.split('_')[0]))
 
                         if abs(corrected_offset_plus) > abs(corrected_offset_minus):
                             corrected_offset = corrected_offset_minus
@@ -1087,9 +1090,11 @@ def output(match_dic=consolidate_match()):
 
                     # Add all info on MS2 matches
                     for i, MS2 in enumerate(ion_rt[1][match][6:-1]):
+                        measured_mass = np.float64(ion_rt[1][match][i + 7][2]) + \
+                                        ppm_range(np.float64(ion_rt[1][match][i + 7][2]), MS2_ppm_offset)
+                        theoretical_mass = np.float64(ion_rt[1][match][i + 7][0])
                         line_list.append(str("{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][2]))) + "(" + str(
-                            ppm_offset(ion_rt[1][match][i + 7][2], np.float64(ion_rt[1][match][i + 7][0]) + ppm_range(
-                                np.float64(ion_rt[1][match][i + 7][0]), args.MS2_ppm_offset))) +
+                            measured_mass, theoretical_mass) +
                                          "ppm)[" + str(
                             int(round(np.float64(ion_rt[1][match][i + 7][3]), 0))) + "]:" + str(
                             "{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][0]))) + "[" + ion_rt[1][match][i + 7][
