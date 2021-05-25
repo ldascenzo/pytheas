@@ -36,8 +36,8 @@ class Match:
                  targets_with_decoys):
         self.digest_file, self.mgf_file, self.light_heavy = digest, mgf, isotope
         self.MS1_mzlow, self.MS1_mzhigh, self.MS2_mzlow, self.MS2_mzhigh = MS1_mzmin, MS1_mzmax, MS2_mzmin, MS2_mzmax
-        self.MS1_ppm, self.MS2_ppm, self.MS1_ppm_offset = round(MS1_ppm, 1), round(MS2_ppm, 1), round(MS1_offset_ppm, 1)
-        self.MS2_ppm_offset = round(MS2_offset_ppm, 1)
+        self.MS1_ppm, self.MS2_ppm, self.MS1_ppm_offset = round(MS1_ppm, 1), round(MS2_ppm, 1), -round(MS1_offset_ppm, 1)
+        self.MS2_ppm_offset = -round(MS2_offset_ppm, 1)
         self.MS2_peak_int_min, self.MS2_peak_num_max = MS2_intensity_min, MS2_peaks_max
         self.precursor_window_removal, self.losses_window_removal = precursor_removal, loss_removal
         self.beta_increment, self.alpha, self.MS2_normint_cutoff = beta, alpha, MS2_cutoff_normalized_int
@@ -596,7 +596,6 @@ class Match:
                 # Find matches of MS2 fragments between mgf file and theoretical digest
                 for x in prec_match[key_match][-1]:
                     ion_mass, ion_charge = np.float64(x.split(':')[-1]), int(x.split(')')[0][-1])
-
                     # Matched only ions within specified MS2 charge, and within given ppm offset
                     add = (list([k, v] for k, v in mgf_dic[key].items() if ion_mass +
                                 ppm_range(ion_mass, self.MS2_ppm_offset) -
@@ -733,11 +732,21 @@ class Match:
         global MS1_hits, MS2_hits
         MS1_hits, MS2_hits, list_ion_rt = 0, 0, []
 
+        if self.MS1_ppm_offset == 0:
+            MS1_ppm_off = 0.0
+        else:
+            MS1_ppm_off = - self.MS1_ppm_offset
+
+        if self.MS2_ppm_offset == 0:
+            MS2_ppm_off = 0.0
+        else:
+            MS2_ppm_off = - self.MS2_ppm_offset
+
         output_lines = ["#theoretical_digest " + self.digest_file + "\n#enzyme " + str(
             enzyme) + "\n#MS_data " + self.mgf_file + "\n#isotopic_species " + self.light_heavy +
                         "\n#MS1_ppm " + str(self.MS1_ppm) + "\n#MS2_ppm " + str(
-            self.MS2_ppm) + "\n#MS1_offset_ppm " + str(self.MS1_ppm_offset) + "\n#MS2_offset_ppm " + str(
-            self.MS2_ppm_offset) + "\n#MS1_mz_minimum " + str(self.MS1_mzlow) + "\n#MS1_mz_maximum " + str(
+            self.MS2_ppm) + "\n#MS1_offset_ppm " + str(MS1_ppm_off) + "\n#MS2_offset_ppm " + str(
+            MS2_ppm_off) + "\n#MS1_mz_minimum " + str(self.MS1_mzlow) + "\n#MS1_mz_maximum " + str(
             self.MS1_mzhigh) + "\n#MS2_mz_minimum " + str(self.MS2_mzlow) +
                         "\n#MS2_mz_maximum " + str(self.MS2_mzhigh) + "\n#MS2_abs_peak_intensity " + str(
             self.MS2_peak_int_min) + "\n#MS2_peak_num_maximum " + str(
@@ -775,20 +784,21 @@ class Match:
                         n_ms2_ions = self.n_calc(ion_rt[1][match][7:], mod_detection(ion_rt[1][match][2]))
 
                         # Correct the offset for matches of isotopologues and mark them with a *
-                        calculated_offset = ppm_offset(match.split('_')[0],
-                                                       np.float64(ion_rt[0].split('_')[0]) + ppm_range(
-                                                           np.float64(ion_rt[0].split('_')[0]), self.MS1_ppm_offset))
+                        calculated_offset = ppm_offset(np.float64(ion_rt[0].split('_')[0]) + ppm_range(
+                                                           np.float64(ion_rt[0].split('_')[0]), self.MS1_ppm_offset),
+                                                       match.split('_')[0])
                         if abs(calculated_offset) > self.MS1_ppm:
-                            corrected_offset_minus = ppm_offset(
-                                np.float64(match.split('_')[0]), np.float64(ion_rt[0].split('_')[0])
+                            corrected_offset_minus = ppm_offset(np.float64(ion_rt[0].split('_')[0])
                                                                  - neutron_mass / abs(int(match.split('_')[2])) +
                                                                  ppm_range(np.float64(ion_rt[0].split('_')[0]),
-                                                                           self.MS1_ppm_offset))
+                                                                           self.MS1_ppm_offset),
+                                                                np.float64(match.split('_')[0]))
                             corrected_offset_plus = ppm_offset(
-                                np.float64(match.split('_')[0]), np.float64(ion_rt[0].split('_')[0])
+                                                                 np.float64(ion_rt[0].split('_')[0])
                                                                  + neutron_mass / abs(int(match.split('_')[2])) +
                                                                  ppm_range(np.float64(ion_rt[0].split('_')[0]),
-                                                                           self.MS1_ppm_offset))
+                                                                           self.MS1_ppm_offset),
+                                                                 np.float64(match.split('_')[0]), )
 
                             if abs(corrected_offset_plus) > abs(corrected_offset_minus):
                                 corrected_offset = corrected_offset_minus
@@ -813,10 +823,11 @@ class Match:
 
                         # Add all info on MS2 matches
                         for i, MS2 in enumerate(ion_rt[1][match][6:-1]):
+                            measured_mass = np.float64(ion_rt[1][match][i + 7][2]) + \
+                                               ppm_range(np.float64(ion_rt[1][match][i + 7][2]), self.MS2_ppm_offset)
+                            theoretical_mass = np.float64(ion_rt[1][match][i + 7][0])
                             line_list.append(str("{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][2]))) + "(" + str(
-                                ppm_offset(ion_rt[1][match][i + 7][2],
-                                           np.float64(ion_rt[1][match][i + 7][0]) + ppm_range(
-                                               np.float64(ion_rt[1][match][i + 7][0]), self.MS2_ppm_offset))) +
+                                ppm_offset(measured_mass, theoretical_mass)) +
                                              "ppm)[" + str(
                                 int(round(np.float64(ion_rt[1][match][i + 7][3]), 0))) + "]:" + str(
                                 "{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][0]))) + "[" +
@@ -978,7 +989,7 @@ def ppm_offset(measured_mass, theoretical_mass):
     Calculate the ppm offset between matching m/z values for MS1/MS2
     """
     difference = np.float64(measured_mass) - np.float64(theoretical_mass)
-    ppm_offset = difference / np.float64(theoretical_mass) * 1000000
+    ppm_offset = difference / np.float64(measured_mass) * 1000000
 
     return round(ppm_offset, 1)
 
