@@ -598,10 +598,10 @@ class Match:
                     ion_mass, ion_charge = np.float64(x.split(':')[-1]), int(x.split(')')[0][-1])
                     # Matched only ions within specified MS2 charge, and within given ppm offset
                     add = (list([k, v] for k, v in mgf_dic[key].items() if ion_mass +
-                                ppm_range(ion_mass, self.MS2_ppm_offset) -
-                                ppm_range(ion_mass + ppm_range(ion_mass, self.MS2_ppm_offset), self.MS2_ppm) <=
-                                np.float64(k) <= ion_mass + ppm_range(ion_mass, self.MS2_ppm_offset) + ppm_range(
-                        ion_mass + ppm_range(ion_mass, self.MS2_ppm_offset), self.MS2_ppm)))
+                                ppm_range(ion_mass, -self.MS2_ppm_offset) -
+                                ppm_range(ion_mass + ppm_range(ion_mass, -self.MS2_ppm_offset), self.MS2_ppm) <=
+                                np.float64(k) <= ion_mass + ppm_range(ion_mass, -self.MS2_ppm_offset) + ppm_range(
+                        ion_mass + ppm_range(ion_mass, -self.MS2_ppm_offset), self.MS2_ppm)))
 
                     # Select only MS2 ions that have a relative intensity above a certain threshold
                     if add:
