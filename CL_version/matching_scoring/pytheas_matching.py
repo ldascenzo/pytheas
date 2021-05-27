@@ -1090,15 +1090,16 @@ def output(match_dic=consolidate_match()):
 
                     # Add all info on MS2 matches
                     for i, MS2 in enumerate(ion_rt[1][match][6:-1]):
-                        measured_mass = np.float64(ion_rt[1][match][i + 7][2])
-                        theoretical_mass = np.float64(ion_rt[1][match][i + 7][0]) + \
-                                        ppm_range(np.float64(ion_rt[1][match][i + 7][0]), MS2_ppm_offset)
-                        line_list.append(str("{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][2]))) + "(" + str(
-                            -ppm_offset(theoretical_mass, measured_mass)) +
-                                         "ppm)[" + str(
-                            int(round(np.float64(ion_rt[1][match][i + 7][3]), 0))) + "]:" + str(
-                            "{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][0]))) + "[" + ion_rt[1][match][i + 7][
-                                             1] + "]")
+                        measured_mass = np.float64(ion_rt[1][match][i + 7][2]) + \
+                                        ppm_range(np.float64(ion_rt[1][match][i + 7][2]), MS2_ppm_offset)
+                        theoretical_mass = np.float64(ion_rt[1][match][i + 7][0])
+                        if abs(ppm_offset(measured_mass, theoretical_mass)) <= args.MS2_ppm:
+                            line_list.append(str("{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][2]))) + "(" + str(
+                                ppm_offset(measured_mass, theoretical_mass)) +
+                                             "ppm)[" + str(
+                                int(round(np.float64(ion_rt[1][match][i + 7][3]), 0))) + "]:" + str(
+                                "{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][0]))) + "[" + ion_rt[1][match][i + 7][
+                                                 1] + "]")
 
                     list_precursor.append(line_list)
 
