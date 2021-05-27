@@ -854,10 +854,10 @@ def matching(digest_dic=dig_dic, mgf_dic=mgf_dic()):
 
                 # Matched only ions within specified MS2 charge, and within given ppm offset
                 add = (list([k, v] for k, v in mgf_dic[key].items() if ion_mass +
-                            ppm_range(ion_mass, MS2_ppm_offset) -
-                            ppm_range(ion_mass + ppm_range(ion_mass, MS2_ppm_offset), args.MS2_ppm) <=
-                            np.float64(k) <= ion_mass + ppm_range(ion_mass, MS2_ppm_offset) + ppm_range(
-                    ion_mass + ppm_range(ion_mass, MS2_ppm_offset), args.MS2_ppm)))
+                            ppm_range(ion_mass, -MS2_ppm_offset) -
+                            ppm_range(ion_mass + ppm_range(ion_mass, -MS2_ppm_offset), args.MS2_ppm) <=
+                            np.float64(k) <= ion_mass + ppm_range(ion_mass, -MS2_ppm_offset) + ppm_range(
+                    ion_mass + ppm_range(ion_mass, -MS2_ppm_offset), args.MS2_ppm)))
 
                 # Select only MS2 ions that have a relative intensity above a certain threshold
                 if add:
