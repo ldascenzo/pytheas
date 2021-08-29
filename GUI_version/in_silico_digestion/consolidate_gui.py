@@ -95,6 +95,7 @@ class Consolidation:
             sys.exit(1)
 
         indices = []
+
         # Loop through the dictionary containing the redundant fragments/lines
         # Lines with redundant fragments are consolidated together
         for key in redundant_dictionary:

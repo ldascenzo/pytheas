@@ -804,7 +804,7 @@ class Masses:
                 fasta_input = self.fasta_name.split(':')
 
             # Determine the output name from the input fasta file
-            output_name = filename_from_path(fasta_input[0])[:-4]
+            output_name = filename_from_path(fasta_input[0])[:-6]
 
             open(os.getcwd() + "/Digest_" + output_name + ".txt", 'w').writelines(final_header + body_output)
             out_files.append("Digest_" + output_name + ".txt")
