@@ -75,7 +75,7 @@ def fragment_list():
 
     with open(os.getcwd() + "/output.2", 'r') as infile:
         for line in infile:
-            if line[0] != "#":
+            if line[0] != "#" and line != "\n":
                 split = line.split()
                 if split[2].isdigit():
 
