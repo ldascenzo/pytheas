@@ -1042,8 +1042,8 @@ def output(match_dic=consolidate_match()):
                 break
 
         if ctrl:
-            output_lines.append("\nPRECURSOR_ION=" + key + "\n")  # ION line for each measured precursor ion peak
 
+            prec_count = 0
             for ion_rt in match_dic[key]:
                 MS1_hits += 1
 
@@ -1079,29 +1079,36 @@ def output(match_dic=consolidate_match()):
                     else:
                         corrected_offset = str(calculated_offset)
 
-                    line_list = [ion_rt[0].split('_')[0], str(np.float64(ion_rt[0].split('_')[1])), match.split('_')[0],
-                                 match.split('_')[-1],
-                                 corrected_offset, str(n_ms2_ions), " ".join(ion_rt[1][match][:7])]
+                    if abs(float(corrected_offset[:-1])) < args.MS1_ppm:
+                        prec_count += 1
 
-                    if n_ms2_ions != 0 and ion_rt[0].split('_')[0] + " RT=" + str(
-                            np.float64(ion_rt[0].split('_')[1])) not in list_ion_rt:
-                        MS2_hits += 1
-                        list_ion_rt.append(ion_rt[0].split('_')[0] + " RT=" + str(np.float64(ion_rt[0].split('_')[1])))
+                        line_list = [ion_rt[0].split('_')[0], str(np.float64(ion_rt[0].split('_')[1])), match.split('_')[0],
+                                     match.split('_')[-1],
+                                     corrected_offset, str(n_ms2_ions), " ".join(ion_rt[1][match][:7])]
 
-                    # Add all info on MS2 matches
-                    for i, MS2 in enumerate(ion_rt[1][match][6:-1]):
-                        measured_mass = np.float64(ion_rt[1][match][i + 7][2]) + \
-                                        ppm_range(np.float64(ion_rt[1][match][i + 7][2]), MS2_ppm_offset)
-                        theoretical_mass = np.float64(ion_rt[1][match][i + 7][0])
-                        if abs(ppm_offset(measured_mass, theoretical_mass)) <= args.MS2_ppm:
-                            line_list.append(str("{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][2]))) + "(" + str(
-                                ppm_offset(measured_mass, theoretical_mass)) +
-                                             "ppm)[" + str(
-                                int(round(np.float64(ion_rt[1][match][i + 7][3]), 0))) + "]:" + str(
-                                "{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][0]))) + "[" + ion_rt[1][match][i + 7][
-                                                 1] + "]")
+                        if n_ms2_ions != 0 and ion_rt[0].split('_')[0] + " RT=" + str(
+                                np.float64(ion_rt[0].split('_')[1])) not in list_ion_rt:
+                            MS2_hits += 1
+                            list_ion_rt.append(ion_rt[0].split('_')[0] + " RT=" + str(np.float64(ion_rt[0].split('_')[1])))
 
-                    list_precursor.append(line_list)
+                        # Add all info on MS2 matches
+                        for i, MS2 in enumerate(ion_rt[1][match][6:-1]):
+                            measured_mass = np.float64(ion_rt[1][match][i + 7][2]) + \
+                                            ppm_range(np.float64(ion_rt[1][match][i + 7][2]), MS2_ppm_offset)
+                            theoretical_mass = np.float64(ion_rt[1][match][i + 7][0])
+                            if abs(ppm_offset(measured_mass, theoretical_mass)) <= args.MS2_ppm:
+                                line_list.append(str("{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][2]))) + "(" + str(
+                                    ppm_offset(measured_mass, theoretical_mass)) +
+                                                 "ppm)[" + str(
+                                    int(round(np.float64(ion_rt[1][match][i + 7][3]), 0))) + "]:" + str(
+                                    "{0:.6f}".format(np.float64(ion_rt[1][match][i + 7][0]))) + "[" + ion_rt[1][match][i + 7][
+                                                     1] + "]")
+
+                        list_precursor.append(line_list)
+
+            if prec_count > 0:
+                # ION line for each measured precursor ion peak
+                output_lines.append("\nPRECURSOR_ION=" + key + "\n")
 
         list_prec_sorted = sorted(list_precursor, key=lambda x: np.float64(x[1]))
 
