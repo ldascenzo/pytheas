@@ -1,3 +1,6 @@
 # Custom enzyme cleavage sites
+# Please insert one cleaving site per line
 # The cleaving bond is highlighted with a *
+# One letter code are supported: Y for C or U, R for A or G and N for any nucleotide
 G*
+C*A
