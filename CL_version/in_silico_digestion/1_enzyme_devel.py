@@ -377,11 +377,13 @@ if __name__ == "__main__":
             cleavages = f"#CLEAVING_SITES {','.join(read_custom_enzyme(args.custom_enzyme))}\n"
     # The header info differ based on the choice of nonspecific or specific cleavage
     if args.enzyme == 'nonspecific':
-        starting_lines = ["#ENZYME {}\n#NONSPECIFIC_MIN_LENGTH {}\n#NONSPECIFIC_MAX_LENGTH {}"
+        starting_lines = ["#INPUT_SEQUENCE {}\n#ENZYME {}\n#NONSPECIFIC_MIN_LENGTH {}\n#NONSPECIFIC_MAX_LENGTH {}"
                           "\n#CLEAVED_FRAGMENTS_5'CHEMISTRY"
                           " {}\n#CLEAVED_FRAGMENTS_3'CHEMISTRY {}\n#WHOLE_RNA_5'CHEMISTRY {}\n#WHOLE_RNA_3'CHEMISTRY "
-                          "{}\n#INPUT_SEQUENCE {}\n"
-                          "molecule sequence residue_start residue_end miss 5'end 3'end\n".format(args.enzyme,
+                          "{}\n"
+                          "molecule sequence residue_start residue_end miss 5'end 3'end\n".format(os.path.basename(
+                                                                                                      args.RNA_sequences[0]),
+                                                                                                      args.enzyme,
                                                                                                       args.nonspecific_min_length,
                                                                                                       args.nonspecific_max_length,
                                                                                                       ','.join(
@@ -391,14 +393,15 @@ if __name__ == "__main__":
                                                                                                       ','.join(
                                                                                                           args.RNA_5end_chem),
                                                                                                       ','.join(
-                                                                                                          args.RNA_3end_chem),
-                                                                                                  os.path.basename(
-                                                                                                      args.RNA_sequences[0]))]
+                                                                                                          args.RNA_3end_chem))]
     else:
-        starting_lines = ["#ENZYME {}\n#MISSED_CLEAVAGES {}\n#CLEAVED_FRAGMENTS_5'CHEMISTRY {}\n"
+        starting_lines = ["#INPUT_SEQUENCE {}\n"
+                          "#ENZYME {}\n#MISSED_CLEAVAGES {}\n#CLEAVED_FRAGMENTS_5'CHEMISTRY {}\n"
                           "#CLEAVED_FRAGMENTS_3'CHEMISTRY {}\n#WHOLE_RNA_5'CHEMISTRY {}\n#WHOLE_RNA_3'CHEMISTRY {}\n"
-                          "#INPUT_SEQUENCE {}\n{}"
-                          "molecule sequence residue_start residue_end miss 5'end 3'end\n".format(args.enzyme,
+                          "{}"
+                          "molecule sequence residue_start residue_end miss 5'end 3'end\n".format(os.path.basename(
+                                                                                                      args.RNA_sequences[0]),
+                                                                                                  args.enzyme,
                                                                                                   args.miss,
                                                                                                   ','.join(
                                                                                                       args.cleaved_fragments_5end_chem),
@@ -408,8 +411,6 @@ if __name__ == "__main__":
                                                                                                       args.RNA_5end_chem),
                                                                                                   ','.join(
                                                                                                       args.RNA_3end_chem),
-                                                                                                  os.path.basename(
-                                                                                                      args.RNA_sequences[0]),
                                                                                                   cleavages)]
 
     open(os.getcwd() + "/output.1", 'w').writelines(starting_lines + list(set(generate_output())))
