@@ -148,45 +148,45 @@ def print_ReSites(id, sequence, enzyme):
                 for letter in s[1]:
                     nt2 += iupac_letter_codes_nts()[letter]
                 pattern = r"(?=({0}{1}))".format(nt1, nt2)
-                sites += [str(m.start()) for m in re.finditer(pattern, sequence)]
+                sites += [(str(m.start()), pattern) for m in re.finditer(pattern, sequence)]
             else:
                 if s[0] == '':
                     nt = ''
                     for letter in s[1]:
                         nt += iupac_letter_codes_nts()[letter]
                     pattern = r"(?!^)(?=({0}))".format(nt)
-                    sites += [str(m.start() - 1) for m in re.finditer(pattern, sequence)]
+                    sites += [(str(m.start() - 1), pattern) for m in re.finditer(pattern, sequence)]
                 if s[1] == '':
                     nt = ''
                     for letter in s[0]:
                         nt += iupac_letter_codes_nts()[letter]
                     pattern = r"(?=({0}))(?!$)".format(nt)
-                    sites += [str(m.start()) for m in re.finditer(pattern, sequence)]
+                    sites += [(str(m.start()), pattern) for m in re.finditer(pattern, sequence)]
 
     # Order the list of all the cleavage sites for the given enzyme
-    sites.sort(key=int)
+    sites.sort(key=lambda y: int(y[0]))
 
     if sites:
         # Dirty trick: manually adding the first fragment to the fragments list
-        output_lines.append("{} {} {} {} {}\n".format(id, sequence[:int(sites[0]) + 1], str(1), str(int(sites[0]) + 1),
-                                                      str(0)))
+        output_lines.append("{} {} {} {} {}\n".format(id, sequence[:int(sites[0][0]) + 1], str(1),
+                                                      str(int(sites[0][0]) + 1), str(0)))
 
     sites.append(str(len(sequence)))
 
     # Loop to add all the remaining fragments to the output list
     for start, end in zip(sites, sites[1:]):
 
-        if int(end) < len(sequence):
-            if sequence[int(start) + 1:int(end) + 1]:
+        if type(end) == tuple:
+            if sequence[int(start[0]) + 1:int(end[0]) + 1]:
                 output_lines.append(
-                    "{} {} {} {} {}\n".format(id, sequence[int(start) + 1:int(end) + 1], str(int(start) + 2),
-                                              str(int(end) + 1), str(0)))
+                    "{} {} {} {} {} {}\n".format(id, sequence[int(start[0]) + 1:int(end[0]) + 1], str(int(start[0]) + 2),
+                                              str(int(end[0]) + 1), str(0), start[1]))
 
-        elif int(end) == len(sequence):
-            if sequence[int(start) + 1:int(end) + 1]:
+        else:
+            if sequence[int(start[0]) + 1:int(end) + 1]:
                 output_lines.append(
-                    "{} {} {} {} {}\n".format(id, sequence[int(start) + 1:int(end) + 1], str(int(start) + 2),
-                                              str(int(end)), str(0)))
+                    "{} {} {} {} {} {}\n".format(id, sequence[int(start[0]) + 1:int(end) + 1], str(int(start[0]) + 2),
+                                              str(int(end)), str(0), start[1]))
 
     return output_lines
 
@@ -198,8 +198,9 @@ def miss_1(input_list):
     output_list = []
 
     for x, y in zip(input_list, input_list[1:]):
+        miss = len(re.findall(y.split()[-1], f"{x.split()[1]}{y.split()[1]}"))
         output_list.append(
-            "{} {}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], x.split()[2], y.split()[3], str(1)))
+            "{} {}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], x.split()[2], y.split()[3], miss))
 
     return input_list + output_list
 
@@ -211,10 +212,11 @@ def miss_2(input_list):
     output_list = []
 
     for x, y, z in zip(input_list, input_list[1:], input_list[2:]):
-        if z.split()[-1][0] == "0":
+        if len(z.split()) == 6:
+            miss = len(re.findall(z.split()[-1], f"{x.split()[1]}{y.split()[1]}{z.split()[1]}"))
             output_list.append(
                 "{} {}{}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], z.split()[1], x.split()[2],
-                                              z.split()[3], str(2)))
+                                              z.split()[3], miss))
 
     return input_list + output_list
 
@@ -226,10 +228,11 @@ def miss_3(input_list):
     output_list = []
 
     for x, y, z, w in zip(input_list, input_list[1:], input_list[2:], input_list[3:]):
-        if w.split()[-1][0] == "0":
+        if len(w.split()) == 6:
+            miss = len(re.findall(w.split()[-1], f"{x.split()[1]}{y.split()[1]}{z.split()[1]}{w.split()[1]}"))
             output_list.append(
                 "{} {}{}{}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], z.split()[1], w.split()[1],
-                                                x.split()[2], w.split()[3], str(3)))
+                                                x.split()[2], w.split()[3], miss))
 
     return input_list + output_list
 
@@ -241,12 +244,22 @@ def miss_4(input_list):
     output_list = []
 
     for x, y, z, w, v in zip(input_list, input_list[1:], input_list[2:], input_list[3:], input_list[4:]):
-        if v.split()[-1][0] == "0":
+        if len(v.split()) == 6:
+            miss = len(re.findall(v.split()[-1], f"{x.split()[1]}{y.split()[1]}{z.split()[1]}{w.split()[1]}"
+                                                 f"{v.split()[1]}"))
             output_list.append(
                 "{} {}{}{}{}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], z.split()[1], w.split()[1],
-                                                  v.split()[1], x.split()[2], v.split()[3], str(4)))
+                                                  v.split()[1], x.split()[2], v.split()[3], miss))
 
     return input_list + output_list
+
+
+def clean_lines(input_list):
+    output_list = []
+    for line in input_list:
+        output_list.append(' '.join(line.split()[:5]))
+
+    return output_list
 
 
 def nonspecific(rna_id, sequence, min_length, max_length):
@@ -305,24 +318,24 @@ def generate_output():
                         # Append the missed cleavages lines based on the selected values
                         else:
                             if args.miss == 0:
-                                final_lines = final_lines + print_ReSites(str(seq.id), sequence,
-                                                                          args.enzyme)
+                                final_lines = final_lines + clean_lines(print_ReSites(str(seq.id), sequence,
+                                                                          args.enzyme))
 
                             elif args.miss == 1:
-                                final_lines = final_lines + miss_1(
-                                    print_ReSites(str(seq.id), sequence, args.enzyme))
+                                final_lines = final_lines + clean_lines(miss_1(
+                                    print_ReSites(str(seq.id), sequence, args.enzyme)))
 
                             elif args.miss == 2:
-                                final_lines = final_lines + miss_2(
-                                    miss_1(print_ReSites(str(seq.id), sequence, args.enzyme)))
+                                final_lines = final_lines + clean_lines(miss_2(
+                                    miss_1(print_ReSites(str(seq.id), sequence, args.enzyme))))
 
                             elif args.miss == 3:
-                                final_lines = final_lines + miss_3(
-                                    miss_2(miss_1(print_ReSites(str(seq.id), sequence, args.enzyme))))
+                                final_lines = final_lines + clean_lines(miss_3(
+                                    miss_2(miss_1(print_ReSites(str(seq.id), sequence, args.enzyme)))))
 
                             elif args.miss == 4:
-                                final_lines = final_lines + miss_4(miss_3(
-                                    miss_2(miss_1(print_ReSites(str(seq.id), sequence, args.enzyme)))))
+                                final_lines = final_lines + clean_lines(miss_4(miss_3(
+                                    miss_2(miss_1(print_ReSites(str(seq.id), sequence, args.enzyme))))))
 
     open(os.getcwd() + "/seq_output", 'w').writelines(seq_output)
 
