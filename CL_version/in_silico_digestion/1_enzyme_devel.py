@@ -151,7 +151,7 @@ def print_ReSites(id, sequence, enzyme):
                     nt2 += iupac_letter_codes_nts()[letter]
                 pattern = r"(?=({0}{1}))".format(nt1, nt2)
                 pattern_glob.append(pattern)
-                sites += [(str(m.start() + len(nt1) - 1), pattern) for m in re.finditer(pattern, sequence)]
+                sites += [(str(m.start() + len(s[0]) - 1), pattern) for m in re.finditer(pattern, sequence)]
             else:
                 if s[0] == '':
                     nt = ''
@@ -170,9 +170,9 @@ def print_ReSites(id, sequence, enzyme):
                     if len(nt) == 1:
                         pattern = r"({0})(?!$)".format(nt)
                     else:
-                        pattern = r"(?=({0}))(?!$)".format(nt)
+                        pattern = r"(?=({0})(?!$))".format(nt)
                     pattern_glob.append(pattern)
-                    sites += [(str(m.start() + len(nt) - 1), pattern) for m in re.finditer(pattern, sequence)]
+                    sites += [(str(m.start() + len(s[0]) - 1), pattern) for m in re.finditer(pattern, sequence)]
 
     # Order the list of all the cleavage sites for the given enzyme
     sites.sort(key=lambda y: int(y[0]))
