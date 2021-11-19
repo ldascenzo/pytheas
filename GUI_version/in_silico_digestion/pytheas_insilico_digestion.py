@@ -27,7 +27,7 @@ def in_silico_digest():
     # Required Arguments
     parser.add_argument("RNA_sequences", help="Input RNA sequence(s) in fasta format",
                         widget="MultiFileChooser")
-    parser.add_argument("Enzyme", choices=['A', 'T1', 'U2', 'Cus', 'none', 'nonspecific'],
+    parser.add_argument("Enzyme", choices=['A', 'T1', 'U2', 'Cus', 'MC1', 'MAZ', 'none', 'nonspecific'],
                         help='RNA endonuclease for the in silico digestion', gooey_options={'validator': {
             'test': "user_input != 'Select Option'", 'message': 'Enzyme is required'}})
     parser.add_argument('Nucleotides_light',

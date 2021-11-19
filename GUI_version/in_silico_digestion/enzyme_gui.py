@@ -21,7 +21,7 @@ steps of the in silico digestion generation
 
 """
 
-import re
+import os, re
 import sys
 from Bio import SeqIO
 import platform
@@ -83,24 +83,24 @@ class Enzyme_cleavage:
                         else:
 
                             if self.miss == 0:
-                                final_lines = final_lines + print_ReSites(str(seq.id), sequence,
-                                                                          self.enzyme_cut())
+                                final_lines = final_lines + clean_lines(print_ReSites(str(seq.id), sequence,
+                                                                                      enzyme_cut(), self.enzyme))
 
                             elif self.miss == 1:
-                                final_lines = final_lines + miss_1(
-                                    print_ReSites(str(seq.id), sequence, self.enzyme_cut()))
+                                final_lines = final_lines + clean_lines(miss_1(
+                                    print_ReSites(str(seq.id), sequence, enzyme_cut(), self.enzyme) ))
 
                             elif self.miss == 2:
-                                final_lines = final_lines + miss_2(
-                                    miss_1(print_ReSites(str(seq.id), sequence, self.enzyme_cut())))
+                                final_lines = final_lines + clean_lines(miss_2(
+                                    miss_1(print_ReSites(str(seq.id), sequence, enzyme_cut(), self.enzyme))))
 
                             elif self.miss == 3:
-                                final_lines = final_lines + miss_3(
-                                    miss_2(miss_1(print_ReSites(str(seq.id), sequence, self.enzyme_cut()))))
+                                final_lines = final_lines + clean_lines(miss_3(
+                                    miss_2(miss_1(print_ReSites(str(seq.id), sequence, enzyme_cut(), self.enzyme)))))
 
                             elif self.miss == 4:
-                                final_lines = final_lines + miss_4(miss_3(
-                                    miss_2(miss_1(print_ReSites(str(seq.id), sequence, self.enzyme_cut())))))
+                                final_lines = final_lines + clean_lines(miss_4(miss_3(
+                                    miss_2(miss_1(print_ReSites(str(seq.id), sequence, enzyme_cut(), self.enzyme))))))
 
         open("./seq_output", 'w').writelines(seq_output)
 
@@ -110,27 +110,6 @@ class Enzyme_cleavage:
             output_lines.extend(self.assign_chemistry(line, sequences_dictionary))
 
         return output_lines
-
-    def enzyme_cut(self):
-        """
-        Definition of the RNA endonuclease cleavages (on 3' of the given nucleotide)
-        """
-        if self.enzyme == 'A':
-            cut_nts = ['C', 'U']
-
-        elif self.enzyme == 'T1':
-            cut_nts = ['G']
-
-        elif self.enzyme == 'U2':
-            cut_nts = ['A', 'G']
-
-        elif self.enzyme == 'Cus':
-            cut_nts = ['C']
-
-        elif self.enzyme == 'none':
-            cut_nts = []
-
-        return cut_nts
 
     def assign_chemistry(self, fragment, sequences):
         """
@@ -166,31 +145,59 @@ class Enzyme_cleavage:
         """
         # The header info differ based on the choice of nonspecific or specific cleavage
         if self.enzyme == 'nonspecific':
-            starting_lines = ["#ENZYME {}\n#NONSPECIFIC_MIN_LENGTH {}\n#NONSPECIFIC_MAX_LENGTH {}"
+            starting_lines = ["#INPUT_SEQUENCE {}\n#ENZYME {}\n#NONSPECIFIC_MIN_LENGTH {}\n#NONSPECIFIC_MAX_LENGTH {}"
                               "\n#CLEAVED_RNA_5'CHEMISTRY"
                               " {}\n#CLEAVED_RNA_3'CHEMISTRY {}\n#RNA_5'CHEMISTRY {}"
                               "\n#RNA_3'CHEMISTRY {}\nmolecule sequence residue_start residue_end miss "
-                              "5'end 3'end\n".format(self.enzyme,
-                                                       self.nonspecific_min_length,
-                                                       self.nonspecific_max_length,
-                                                       ','.join(self.cleaved_fragments_5end_chem),
-                                                       ','.join(self.cleaved_fragments_3end_chem),
-                                                       ','.join(self.RNA_5end_chem),
-                                                       ','.join(self.RNA_3end_chem))]
+                              "5'end 3'end\n".format(os.path.basename(self.RNA_sequences),
+                                                     self.enzyme,
+                                                     self.nonspecific_min_length,
+                                                     self.nonspecific_max_length,
+                                                     ','.join(self.cleaved_fragments_5end_chem),
+                                                     ','.join(self.cleaved_fragments_3end_chem),
+                                                     ','.join(self.RNA_5end_chem),
+                                                     ','.join(self.RNA_3end_chem))]
         else:
-            starting_lines = ["#ENZYME {}\n#MISSED_CLEAVAGES {}\n#CLEAVED_RNA_5'CHEMISTRY {}\n"
+            starting_lines = ["#INPUT_SEQUENCE {}\n#ENZYME {}\n#MISSED_CLEAVAGES {}\n#CLEAVED_RNA_5'CHEMISTRY {}\n"
                               "#CLEAVED_RNA_3'CHEMISTRY {}\n#RNA_5'CHEMISTRY {}"
                               "\n#RNA_3'CHEMISTRY {}\nmolecule sequence residue_start residue_end miss "
-                              "5'end 3'end\n".format(self.enzyme, self.miss,
-                                                       ','.join(self.cleaved_fragments_5end_chem),
-                                                       ','.join(self.cleaved_fragments_3end_chem),
-                                                       ','.join(self.RNA_5end_chem),
-                                                       ','.join(self.RNA_3end_chem))]
+                              "5'end 3'end\n".format(os.path.basename(self.RNA_sequences), self.enzyme, self.miss,
+                                                     ','.join(self.cleaved_fragments_5end_chem),
+                                                     ','.join(self.cleaved_fragments_3end_chem),
+                                                     ','.join(self.RNA_5end_chem),
+                                                     ','.join(self.RNA_3end_chem))]
 
         open("./output.1", 'w').writelines(starting_lines + list(set(self.generate_output())))
 
 
-def print_ReSites(seq_id, sequence, cut_nts):
+def enzyme_cut():
+    """
+    Define the dictionary of the standard RNase cleaving sites identified with a *
+    """
+    return {'A': ['C*', 'U*'], 'T1': ['G*'], 'U2': ['A*', 'G*'], 'Cus': ['C*A', 'C*G', 'C*U'],
+            'MC1': ['U*U', 'C*U', 'A*U'], 'MAZ': ['*ACA'], 'none': []}
+
+
+def iupac_letter_codes_nts():
+    """
+    Dictionary with the one letter code symbols for RNA nucleotides
+    From: https://www.megasoftware.net/web_help_7/rh_iupac_single_letter_codes.htm
+    """
+    return {'A': 'A', 'C': 'C', 'G': 'G', 'U': 'U', 'Y': '[CU]', 'R': '[AG]', 'N': '[ACGU]'}
+
+
+def clean_lines(input_list):
+    """
+    Clean the final output lines
+    """
+    output_list = []
+    for line in input_list:
+        output_list.append(' '.join(line.split()[:5]))
+
+    return output_list
+
+
+def print_ReSites(seq_id, sequence, cut_nts, enzyme):
     """
     Computation of all the RNA cleavages fragments for the nuclease.
     Fragment sequences are given with the format:
@@ -198,47 +205,78 @@ def print_ReSites(seq_id, sequence, cut_nts):
     """
     output_lines = []
 
-    if len(cut_nts) == 1:
-        # All occurrences of the given base are matched except if at the end of the sequence
-        pattern = r"{0}(?!$)".format(cut_nts[0])
+    global pattern_glob
+    pattern_glob = []
 
-    elif len(cut_nts) == 2:
-        # All occurrences of the given base are matched except if at the end of the sequence
-        pattern = r"({0}|{1})(?!$)".format(cut_nts[0], cut_nts[1])
+    if enzyme == 'none':
+        sites = []
+        # Adding only one fragment in the case of no enzymatic digestion
+        output_lines.append("{} {} {} {} {}\n".format(seq_id, sequence, str(1), str(len(sequence)), str(
+            0)))
 
-    elif len(cut_nts) == 0:
-        # No nucleotides are matched in case of no enzymatic digestion
-        pattern = 'X1X'
+    else:
+        sites = []
+        cleaving_sites = enzyme_cut()[enzyme]
 
-    # List of all the cleavage sites for the given enzyme
-    sites = [str(m.start()) for m in re.finditer(pattern, sequence)]
+        for cut in cleaving_sites:
+            s = cut.split('*')
+            if s[0] != '' and s[1] != '':
+                nt1, nt2 = '', ''
+                for letter in s[0]:
+                    nt1 += iupac_letter_codes_nts()[letter]
+                for letter in s[1]:
+                    nt2 += iupac_letter_codes_nts()[letter]
+                pattern = r"(?=({0}{1}))".format(nt1, nt2)
+                pattern_glob.append(pattern)
+                sites += [(str(m.start() + len(s[0]) - 1), pattern) for m in re.finditer(pattern, sequence)]
+            else:
+                if s[0] == '':
+                    nt = ''
+                    for letter in s[1]:
+                        nt += iupac_letter_codes_nts()[letter]
+                    if len(nt) == 1:
+                        pattern = r"(?!^)({0})".format(nt)
+                    else:
+                        pattern = r"(?!^)(?=({0}))".format(nt)
+                    pattern_glob.append(pattern)
+                    sites += [(str(m.start() - 1), pattern) for m in re.finditer(pattern, sequence)]
+                if s[1] == '':
+                    nt = ''
+                    for letter in s[0]:
+                        nt += iupac_letter_codes_nts()[letter]
+                    if len(nt) == 1:
+                        pattern = r"({0})(?!$)".format(nt)
+                    else:
+                        pattern = r"(?=({0})(?!$))".format(nt)
+                    pattern_glob.append(pattern)
+                    sites += [(str(m.start() + len(s[0]) - 1), pattern) for m in re.finditer(pattern, sequence)]
+
+    # Order the list of all the cleavage sites for the given enzyme
+    sites.sort(key=lambda y: int(y[0]))
 
     if sites:
         # Dirty trick: manually adding the first fragment to the fragments list
         output_lines.append(
-            "{} {} {} {} {}\n".format(seq_id, sequence[:int(sites[0]) + 1], str(1), str(int(sites[0]) + 1),
+            "{} {} {} {} {}\n".format(seq_id, sequence[:int(sites[0][0]) + 1], str(1), str(int(sites[0][0]) + 1),
                                       str(0)))
-
-    else:
-        # Adding only one fragment in the case of no enzymatic digestion
-        output_lines.append("{} {} {} {} {}\n".format(seq_id, sequence, str(1), str(len(sequence)), str(
-            0)))
 
     sites.append(str(len(sequence)))
 
     # Loop to add all the remaining fragments to the output list
     for start, end in zip(sites, sites[1:]):
 
-        if int(end) < len(sequence):
-            output_lines.append(
-                "{} {} {} {} {}\n".format(seq_id, sequence[int(start) + 1:int(end) + 1], str(int(start) + 2),
-                                          str(int(end) + 1), str(0)))
+        if type(end) == tuple:
+            if sequence[int(start[0]) + 1:int(end[0]) + 1]:
+                output_lines.append(
+                    "{} {} {} {} {} {}\n".format(seq_id, sequence[int(start[0]) + 1:int(end[0]) + 1],
+                                                 str(int(start[0]) + 2),
+                                                 str(int(end[0]) + 1), str(0), start[1]))
 
-        elif int(end) == len(sequence):
-            output_lines.append(
-                "{} {} {} {} {}\n".format(seq_id, sequence[int(start) + 1:int(end) + 1], str(int(start) + 2),
-                                          str(int(end)),
-                                          str(0)))
+        else:
+            if sequence[int(start[0]) + 1:int(end) + 1]:
+                output_lines.append(
+                    "{} {} {} {} {} {}\n".format(seq_id, sequence[int(start[0]) + 1:int(end) + 1], str(int(start[0]) + 2),
+                                                 str(int(end)), str(0), start[1]))
 
     return output_lines
 
@@ -250,9 +288,11 @@ def miss_1(input_list):
     output_list = []
 
     for x, y in zip(input_list, input_list[1:]):
+        miss = 0
+        for pattern in pattern_glob:
+            miss += len(re.findall(pattern, f"{x.split()[1]}{y.split()[1]}"))
         output_list.append(
-            "{} {}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], x.split()[2], y.split()[3],
-                                        str(1)))
+            "{} {}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], x.split()[2], y.split()[3], miss))
 
     return input_list + output_list
 
@@ -264,10 +304,13 @@ def miss_2(input_list):
     output_list = []
 
     for x, y, z in zip(input_list, input_list[1:], input_list[2:]):
-        if z.split()[-1][0] == "0":
+        if len(z.split()) == 6:
+            miss = 0
+            for pattern in pattern_glob:
+                miss += len(re.findall(pattern, f"{x.split()[1]}{y.split()[1]}{z.split()[1]}"))
             output_list.append(
                 "{} {}{}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], z.split()[1], x.split()[2],
-                                              z.split()[3], str(2)))
+                                              z.split()[3], miss))
 
     return input_list + output_list
 
@@ -279,11 +322,13 @@ def miss_3(input_list):
     output_list = []
 
     for x, y, z, w in zip(input_list, input_list[1:], input_list[2:], input_list[3:]):
-        if w.split()[-1][0] == "0":
+        if len(w.split()) == 6:
+            miss = 0
+            for pattern in pattern_glob:
+                miss += len(re.findall(pattern, f"{x.split()[1]}{y.split()[1]}{z.split()[1]}{w.split()[1]}"))
             output_list.append(
-                "{} {}{}{}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], z.split()[1],
-                                                w.split()[1],
-                                                x.split()[2], w.split()[3], str(3)))
+                "{} {}{}{}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], z.split()[1], w.split()[1],
+                                                x.split()[2], w.split()[3], miss))
 
     return input_list + output_list
 
@@ -295,11 +340,14 @@ def miss_4(input_list):
     output_list = []
 
     for x, y, z, w, v in zip(input_list, input_list[1:], input_list[2:], input_list[3:], input_list[4:]):
-        if v.split()[-1][0] == "0":
+        if len(v.split()) == 6:
+            miss = 0
+            for pattern in pattern_glob:
+                miss += len(re.findall(pattern, f"{x.split()[1]}{y.split()[1]}{z.split()[1]}{w.split()[1]}"
+                                                f"{v.split()[1]}"))
             output_list.append(
-                "{} {}{}{}{}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], z.split()[1],
-                                                  w.split()[1],
-                                                  v.split()[1], x.split()[2], v.split()[3], str(4)))
+                "{} {}{}{}{}{} {} {} {}\n".format(x.split()[0], x.split()[1], y.split()[1], z.split()[1], w.split()[1],
+                                                  v.split()[1], x.split()[2], v.split()[3], miss))
 
     return input_list + output_list
 

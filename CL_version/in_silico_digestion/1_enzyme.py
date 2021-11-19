@@ -411,8 +411,8 @@ if __name__ == "__main__":
     # The header info differ based on the choice of nonspecific or specific cleavage
     if args.enzyme == 'nonspecific':
         starting_lines = ["#INPUT_SEQUENCE {}\n#ENZYME {}\n#NONSPECIFIC_MIN_LENGTH {}\n#NONSPECIFIC_MAX_LENGTH {}"
-                          "\n#CLEAVED_FRAGMENTS_5'CHEMISTRY"
-                          " {}\n#CLEAVED_FRAGMENTS_3'CHEMISTRY {}\n#WHOLE_RNA_5'CHEMISTRY {}\n#WHOLE_RNA_3'CHEMISTRY "
+                          "\n#CLEAVED_RNA_5'CHEMISTRY"
+                          " {}\n#CLEAVED_RNA_3'CHEMISTRY {}\n#RNA_5'CHEMISTRY {}\n#RNA_3'CHEMISTRY "
                           "{}\n"
                           "molecule sequence residue_start residue_end miss 5'end 3'end\n".format(os.path.basename(
             args.RNA_sequences[0]),
@@ -429,8 +429,8 @@ if __name__ == "__main__":
                 args.RNA_3end_chem))]
     else:
         starting_lines = ["#INPUT_SEQUENCE {}\n"
-                          "#ENZYME {}\n#MISSED_CLEAVAGES {}\n#CLEAVED_FRAGMENTS_5'CHEMISTRY {}\n"
-                          "#CLEAVED_FRAGMENTS_3'CHEMISTRY {}\n#WHOLE_RNA_5'CHEMISTRY {}\n#WHOLE_RNA_3'CHEMISTRY {}\n"
+                          "#ENZYME {}\n#MISSED_CLEAVAGES {}\n#CLEAVED_RNA_5'CHEMISTRY {}\n"
+                          "#CLEAVED_RNA_3'CHEMISTRY {}\n#RNA_5'CHEMISTRY {}\n#RNA_3'CHEMISTRY {}\n"
                           "{}"
                           "molecule sequence residue_start residue_end miss 5'end 3'end\n".format(os.path.basename(
             args.RNA_sequences[0]),
