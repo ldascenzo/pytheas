@@ -997,6 +997,9 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
 
             if line[0] == "#":
                 header_lines.append(line)
+                if '#INPUT_SEQUENCE' in line:
+                    global input_sequence
+                    input_sequence = line.split()[1].split(".fasta")[0]
 
         header_lines.append(
             "m/z isotope molecule_ID residue_start residue_end charge miss sequence "
@@ -1056,8 +1059,8 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
     final_header = (["#TARGETS {}\n#DECOYS {}\n".format(tot_targets, tot_decoys)]
                     + header_info_MS2(open(os.getcwd() + "/output.3.MS2", 'r')))
 
-    open(os.getcwd() + "/Digest_MS2.txt", 'w').writelines(final_header + body_output)
-    out_files.append("Digest_MS2.txt")
+    open(os.getcwd() + f"/Digest_{input_sequence}.txt", 'w').writelines(final_header + body_output)
+    out_files.append(f"Digest_{input_sequence}.txt")
 
 else:
     print("WARNING! MS2 file output.3.MS2 from 3_consolidate.py is missing, MS2 digest will not be calculated")
@@ -1065,20 +1068,21 @@ else:
 # m/z based consolidation, where nucleotides that in a particular alphabet are too close
 # in masses ppm to be indistinguishable in the matching, are reported as 'X' within their sequence
 if args.mz_consolidation == 'y':
-    digest_lines = ct.mz_consolidate(args.nts_alphabet_light, 'Digest_MS2.txt', 'light', args.MS1_ppm_consolidation,
+    digest_lines = ct.mz_consolidate(args.nts_alphabet_light, f'Digest_{input_sequence}.txt', 'light', args.MS1_ppm_consolidation,
                                      args.MS2_ppm_consolidation, read_csv())
     if digest_lines:
         open('test_consolidate.txt', 'w').writelines(digest_lines)
-        os.remove(os.getcwd() + '/Digest_MS2.txt')
-        move(os.getcwd() + '/test_consolidate.txt', os.getcwd() + '/Digest_MS2.txt')
+        os.remove(os.getcwd() + f'/Digest_{input_sequence}.txt')
+        move(os.getcwd() + '/test_consolidate.txt', os.getcwd() + f'/Digest_{input_sequence}.txt')
 
     if args.nts_alphabet_heavy:
-        digest_lines = ct.mz_consolidate(args.nts_alphabet_heavy, 'Digest_MS2.txt', 'heavy', args.MS1_ppm_consolidation,
+        digest_lines = ct.mz_consolidate(args.nts_alphabet_heavy, f'Digest_{input_sequence}.txt', 'heavy',
+                                         args.MS1_ppm_consolidation,
                                          args.MS2_ppm_consolidation, read_csv())
 
         open('test_consolidate.txt', 'w').writelines(digest_lines)
-        os.remove(os.getcwd() + '/Digest_MS2.txt')
-        move(os.getcwd() + '/test_consolidate.txt', os.getcwd() + '/Digest_MS2.txt')
+        os.remove(os.getcwd() + f'/Digest_{input_sequence}.txt')
+        move(os.getcwd() + '/test_consolidate.txt', os.getcwd() + f'/Digest_{input_sequence}.txt')
     print("m/z based consolidation COMPLETED!\n")
 
 
