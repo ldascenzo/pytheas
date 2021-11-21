@@ -236,10 +236,10 @@ class Masses:
 
         header_lines.append("#MZLOW_MS1 " + str(self.MS1_mzlow) + "\n")
         header_lines.append("#MZHIGH_MS1 " + str(self.MS1_mzhigh) + "\n")
-        header_lines.append("#NTS_ALPHABET_LIGHT " + str(self.nts_alphabet_light) + "\n")
+        header_lines.append("#NTS_LIGHT " + str(self.nts_alphabet_light) + "\n")
 
         if self.nts_alphabet_heavy:
-            header_lines.append("#NTS_ALPHABET_HEAVY " + str(self.nts_alphabet_heavy) + "\n")
+            header_lines.append("#NTS_HEAVY " + str(self.nts_alphabet_heavy) + "\n")
 
         for line in input_file:
 
@@ -709,7 +709,7 @@ class Masses:
 
         for line in input_file:
 
-            if line[0] == "#" and "MIN_LENGTH_CONSOLIDATE" not in line:
+            if line[0] == "#" and "MIN_LENGTH" not in line:
                 header_lines.append(line)
 
         header_lines.append(
@@ -793,8 +793,8 @@ class Masses:
             body_output = self.final_lines_MS2(lines_MS2)
 
             # Add the info on unique sequences and decoys in the header
-            final_header = (["#TARGETS {}\n#DECOYS {}\n".format(tot_targets, tot_decoys)]
-                            + self.header_info_MS2(open(os.getcwd() + "/output.3.MS2", 'r')))
+            final_header = (self.header_info_MS2(open(os.getcwd() + "/output.3.MS2", 'r')) +
+                            ["#TARGETS {}\n#DECOYS {}\n".format(tot_targets, tot_decoys)])
 
             # Separate the input files if multiple fasta files are selected, based on the running OS
             if platform.system() == 'Windows':
@@ -1039,7 +1039,7 @@ def inlines_MS2():
 
     for line in input_file:
         # Extracting the minimum length of fragments considered for MS2 fragmentation
-        if "MIN_LENGTH_CONSOLIDATE" in line:
+        if "MIN_LENGTH" in line:
             global min_length_MS2
             min_length_MS2 = int(line.split()[1])
 

@@ -475,10 +475,10 @@ def header_info_MS1(input_file):
 
     header_lines.append("#MZLOW_MS1 " + str(args.MS1_mzlow) + "\n")
     header_lines.append("#MZHIGH_MS1 " + str(args.MS1_mzhigh) + "\n")
-    header_lines.append("#NTS_ALPHABET_LIGHT " + str(args.nts_alphabet_light) + "\n")
+    header_lines.append("#NTS_LIGHT " + str(args.nts_alphabet_light) + "\n")
 
     if args.nts_alphabet_heavy:
-        header_lines.append("#NTS_ALPHABET_HEAVY " + str(args.nts_alphabet_heavy) + "\n")
+        header_lines.append("#NTS_HEAVY " + str(args.nts_alphabet_heavy) + "\n")
 
     for line in input_file:
 
@@ -526,7 +526,7 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
 
         for line in input_file:
             # Extracting the minimum length of fragments considered for MS2 fragmentation
-            if "MIN_LENGTH_CONSOLIDATE" in line:
+            if "MIN_LENGTH" in line:
                 global min_length_MS2
                 min_length_MS2 = int(line.split()[1])
 
@@ -982,10 +982,10 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
         header_lines.append("#MZHIGH_MS2 " + str(args.MS2_mzhigh) + "\n")
         header_lines.append("#MZLOW_MS1 " + str(args.MS1_mzlow) + "\n")
         header_lines.append("#MZHIGH_MS1 " + str(args.MS1_mzhigh) + "\n")
-        header_lines.append("#NTS_ALPHABET_LIGHT " + str(args.nts_alphabet_light) + "\n")
+        header_lines.append("#NTS_LIGHT " + str(args.nts_alphabet_light) + "\n")
 
         if args.nts_alphabet_heavy:
-            header_lines.append("#NTS_ALPHABET_HEAVY " + str(args.nts_alphabet_heavy) + "\n")
+            header_lines.append("#NTS_HEAVY " + str(args.nts_alphabet_heavy) + "\n")
 
         header_lines.append("#MZ_CONSOLIDATION " + str(args.mz_consolidation) + "\n")
 

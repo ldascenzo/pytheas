@@ -195,7 +195,7 @@ def output_file(lines, outfile, min_length):
     # Only in case of MS2, info about the maximum length of fragments specified
     # as parameter is added to the output file header
     if args.MS[-1] == "2":
-        final_lines.append("#MIN_LENGTH_CONSOLIDATE " + str(min_length) + "\n")
+        final_lines.append("#MIN_LENGTH " + str(min_length) + "\n")
 
     with open(outfile, 'r') as infile:
         for line in open(outfile, 'r'):
