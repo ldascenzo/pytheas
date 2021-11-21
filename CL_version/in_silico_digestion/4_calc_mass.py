@@ -971,6 +971,14 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
         """
         header_lines = []
 
+        for line in input_file:
+
+            if line[0] == "#" and "#MIN_LENGTH" not in line:
+                header_lines.append(line)
+                if '#INPUT_SEQUENCE' in line:
+                    global input_sequence
+                    input_sequence = line.split()[1].split(".fasta")[0]
+
         if args.ion_mode == "+":
             header_lines.append("#ION_MODE positive\n")
 
@@ -982,28 +990,16 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
         header_lines.append("#MZHIGH_MS2 " + str(args.MS2_mzhigh) + "\n")
         header_lines.append("#MZLOW_MS1 " + str(args.MS1_mzlow) + "\n")
         header_lines.append("#MZHIGH_MS1 " + str(args.MS1_mzhigh) + "\n")
-        header_lines.append("#NTS_LIGHT " + str(args.nts_alphabet_light) + "\n")
+        header_lines.append("#ELEMENTAL_COMPOSITION_LIGHT " + str(args.nts_alphabet_light) + "\n")
 
         if args.nts_alphabet_heavy:
-            header_lines.append("#NTS_HEAVY " + str(args.nts_alphabet_heavy) + "\n")
+            header_lines.append("#ELEMENTAL_COMPOSITION_HEAVY " + str(args.nts_alphabet_heavy) + "\n")
 
-        header_lines.append("#MZ_CONSOLIDATION " + str(args.mz_consolidation) + "\n")
+        header_lines.append("#SEQX_CONSOLIDATION " + str(args.mz_consolidation) + "\n")
 
         if args.mz_consolidation == 'y':
-            header_lines.append("#MS1_PPM_CONSOLIDATION " + str(args.MS1_ppm_consolidation) + "\n")
-            header_lines.append("#MS2_PPM_CONSOLIDATION " + str(args.MS2_ppm_consolidation) + "\n")
-
-        for line in input_file:
-
-            if line[0] == "#":
-                header_lines.append(line)
-                if '#INPUT_SEQUENCE' in line:
-                    global input_sequence
-                    input_sequence = line.split()[1].split(".fasta")[0]
-
-        header_lines.append(
-            "m/z isotope molecule_ID residue_start residue_end charge miss sequence "
-            "sequence_mod 5'end 3'end num_copy molecule_location CID_series_fragment(charge):m/z\n")
+            header_lines.append("#MS1_SEQX_PPM " + str(args.MS1_ppm_consolidation) + "\n")
+            header_lines.append("#MS2_SEQX_PPM " + str(args.MS2_ppm_consolidation) + "\n")
 
         return header_lines
 
@@ -1056,8 +1052,10 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
     body_output = final_lines_MS2(lines_MS2)
 
     # Add the info on unique sequences and decoys in the header
-    final_header = (["#TARGETS {}\n#DECOYS {}\n".format(tot_targets, tot_decoys)]
-                    + header_info_MS2(open(os.getcwd() + "/output.3.MS2", 'r')))
+    final_header = (header_info_MS2(open(os.getcwd() + "/output.3.MS2", 'r')) +
+                    ["#TARGETS {}\n#DECOYS {}\n".format(tot_targets, tot_decoys)] +
+                    ["m/z isotope molecule_ID residue_start residue_end charge miss sequence "
+                        "sequence_mod 5'end 3'end num_copy molecule_location CID_series_fragment(charge):m/z\n"])
 
     open(os.getcwd() + f"/Digest_{input_sequence}.txt", 'w').writelines(final_header + body_output)
     out_files.append(f"Digest_{input_sequence}.txt")

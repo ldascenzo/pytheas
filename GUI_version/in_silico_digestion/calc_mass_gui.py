@@ -685,6 +685,11 @@ class Masses:
         """
         header_lines = []
 
+        for line in input_file:
+
+            if line[0] == "#" and "MIN_LENGTH" not in line:
+                header_lines.append(line)
+
         if self.ion_mode == "+":
             header_lines.append("#ION_MODE positive\n")
 
@@ -706,15 +711,6 @@ class Masses:
         if self.mz_consolidation:
             header_lines.append("#MS1_SEQX_PPM " + str(self.MS1_consolidation_ppm) + "\n")
             header_lines.append("#MS2_SEQX_PPM " + str(self.MS2_consolidation_ppm) + "\n")
-
-        for line in input_file:
-
-            if line[0] == "#" and "MIN_LENGTH" not in line:
-                header_lines.append(line)
-
-        header_lines.append(
-            "m/z isotope molecule_ID residue_start residue_end charge miss sequence "
-            "sequence_mod 5'end 3'end num_copy molecule_location CID_series_fragment(charge):m/z\n")
 
         return header_lines
 
@@ -794,7 +790,9 @@ class Masses:
 
             # Add the info on unique sequences and decoys in the header
             final_header = (self.header_info_MS2(open(os.getcwd() + "/output.3.MS2", 'r')) +
-                            ["#TARGETS {}\n#DECOYS {}\n".format(tot_targets, tot_decoys)])
+                            ["#TARGETS {}\n#DECOYS {}\n".format(tot_targets, tot_decoys)] +
+                            ["m/z isotope molecule_ID residue_start residue_end charge miss sequence "
+                            "sequence_mod 5'end 3'end num_copy molecule_location CID_series_fragment(charge):m/z\n"])
 
             # Separate the input files if multiple fasta files are selected, based on the running OS
             if platform.system() == 'Windows':
