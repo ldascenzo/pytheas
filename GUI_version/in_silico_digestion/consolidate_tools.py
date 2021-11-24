@@ -47,9 +47,9 @@ def ppm_range(value, difference):
 
 def read_excel_input(nts_file):
     """
-    Produce a dataframe with all the info on the nucleobases from the input file nts_alphabet_light
+    Produce a dataframe with all the info on the nucleobases from the input file nts_light
     """
-    # Checking that the nts_alphabet_light file given in argument exists
+    # Checking that the nts_light file given in argument exists
     if not os.path.exists(nts_file):
         print("ERROR! File " + nts_file + " does not exist. Execution terminated without generating any output")
         sys.exit(1)

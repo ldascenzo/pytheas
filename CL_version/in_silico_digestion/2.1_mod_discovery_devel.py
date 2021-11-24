@@ -15,7 +15,7 @@ are computed. Note that the process can become computationally intensive if many
 are added together for long sequences (it is advised to use only one for this version)
 
 ***OPTIONS***
---nts_alphabet_light (REQUIRED): Excel spreadsheet with the standard nucleotides
+--nts_light (REQUIRED): Excel spreadsheet with the standard nucleotides
                                                                       and optional modification alphabet.
 --mod_discovery (REQUIRED):  text file with RNA modifications, must be in the same directory of the script. Details
                              on format and usage can be found in the Digest section of the Pytheas manual
@@ -40,7 +40,7 @@ parser = argparse.ArgumentParser(description='List of available options')
 parser.add_argument('--mod_discovery', required=True,
                     help='File with molecule-specific RNA modifications '
                          '(Required, be sure to fill the Originating_base column!!!!)')
-parser.add_argument('--nts_alphabet_light', required=True,
+parser.add_argument('--nts_light', required=True,
                     help='Excel spreadsheet with the standard nucleotides and optional modification alphabet '
                          '(Required)')
 parser.add_argument('--max_mods_per_fragment', default=2, type=int,
@@ -48,7 +48,7 @@ parser.add_argument('--max_mods_per_fragment', default=2, type=int,
 args = parser.parse_args()
 
 
-def read_excel_input(nts_alph=args.nts_alphabet_light):
+def read_excel_input(nts_alph=args.nts_light):
     """
      Create three dictionaries mod_alphabet, mod_origin and mod_partial
      * mod_alphabet contains all ID : ID_ext couples, one letter and extended IDs or all modified base
@@ -59,7 +59,7 @@ def read_excel_input(nts_alph=args.nts_alphabet_light):
     mod_origin, mod_alphabet = {}, {}
 
     if nts_alph:
-        # Checking that the nts_alphabet_light file given in argument exists
+        # Checking that the nts_light file given in argument exists
         if not os.path.exists(nts_alph):
             print("ERROR! File {} does not exist. Execution terminated without output".format(nts_alph))
             sys.exit(1)
@@ -92,7 +92,7 @@ def parse_input(modfile):
     """
     Create a list with all the modifications to consider for discovery mode
     """
-    # Checking that the nts_alphabet_light file given in argument exists
+    # Checking that the nts_light file given in argument exists
     if not os.path.exists(modfile):
         print("ERROR! File {} does not exist. Execution terminated without output".format(modfile))
         sys.exit(1)

@@ -10,7 +10,7 @@ GitHub project repository: https://github.com/ldascenzo/pytheas
 Second step of the Pytheas in silico digest library generation. RNA nucleolytic fragments obtained from the in silico
 digestion are edited with user-specified chemical modifications.
 The nucleotide chemical dictionary is defined for modified and unmodified nucleotides from the input alphabet file.
-The standard alphabet file, "nts_alphabet_light.xslx" with standard nucleotides, common modifications and IDs is
+The standard alphabet file, "nts_light.xslx" with standard nucleotides, common modifications and IDs is
 provided. More info on the formatting and usage of the alphabet file found in the Digest section of the Pytheas manual.
 A template of the modification file, "modfile_template.txt", is provided. More info on the formatting and usage of the
 modfile can be found in the Digest section of the Pytheas manual.

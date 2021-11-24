@@ -32,7 +32,7 @@ def in_silico_digest():
             'test': "user_input != 'Select Option'", 'message': 'Enzyme is required'}})
     parser.add_argument('Nucleotides_light',
                         help='Elemental composition file for standard and modified nucleotides (Excel spreadsheet)',
-                        widget="FileChooser", default='nts_alphabet_light_std.xlsx')
+                        widget="FileChooser", default='nts_light.xlsx')
     parser.add_argument('Ion_mode', choices=['+', '-'], default='-',
                         help='Negative (-) or Positive (+)')
     parser.add_argument('MS1_charges_table', default='charges_MS1.txt', widget='FileChooser',

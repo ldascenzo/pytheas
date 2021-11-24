@@ -16,8 +16,8 @@ in the Digest section of Pytheas manual.
 
 ***OPTIONS***
 --ion_mode (REQUIRED): Select positive (+) or negative (-) ion mode
---nts_alphabet_light (REQUIRED): Excel spreadsheet with the standard nucleotides and optional modification alphabet.
---nts_alphabet_heavy (OPTIONAL): Excel spreadsheet with the isotopically labeled nucleotides and optional modification
+--nts_light (REQUIRED): Excel spreadsheet with the standard nucleotides and optional modification alphabet.
+--nts_heavy (OPTIONAL): Excel spreadsheet with the isotopically labeled nucleotides and optional modification
                                  alphabet.
 --MS1_charges (OPTIONAL, default = charges_MS1.txt): charge table file for precursor ions (MS1)
 --MS2_charges (OPTIONAL, default = charges_MS2.txt): charge table file for fragment ions (MS2)
@@ -75,9 +75,9 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--ion_mode', choices=['+', '-'], required=True,
                     help='Choose positive (+) or negative (-) ion mode')
-parser.add_argument('--nts_alphabet_light', required=True,
+parser.add_argument('--nts_light', required=True,
                     help='Custom file with nucleotides and modification alphabet (Required)')
-parser.add_argument('--nts_alphabet_heavy', default=None,
+parser.add_argument('--nts_heavy', default=None,
                     help='Custom file with nucleotides and modification alphabet and isotopic labeling info (Optional)')
 parser.add_argument('--MS1_charges', default='charges_MS1.txt',
                     help='Charge table file for MS1 ions, located in the same directory of the script '
@@ -147,50 +147,50 @@ def __controls():
     preceding steps
     """
     # Check the consistency of nucleotides alphabets between this scripts and the preceding ones for light atoms
-    df_light = read_excel_input(args.nts_alphabet_light)
+    df_light = read_excel_input(args.nts_light)
 
     d = DictDiffer(read_csv(), dict(zip(df_light.ID, df_light.ID_ext)))
 
     if len(d.changed()) != 0:
         print(
-            "WARNING! One or more nts IDs from the input nts_alphabet_light have different ID_ext compared "
+            "WARNING! One or more nts IDs from the input nts_light have different ID_ext compared "
             "to the alphabet used in the previous scripts. List of IDs with differences: {}"
             "  Please check carefully your input dictionary and rerun the script\n".format(d.changed()))
 
     if len(d.added()) != 0:
         print(
-            "WARNING! One or more nts IDs from the input nts_alphabet_light are missing compared "
+            "WARNING! One or more nts IDs from the input nts_light are missing compared "
             "to the alphabet used in the previous scripts. List of missing IDs: {}"
             "  Please check carefully your input dictionary and rerun the script\n".format(d.added()))
 
     if len(d.removed()) != 0:
         print(
-            "WARNING! One or more nts IDs from the input nts_alphabet_light are not present "
+            "WARNING! One or more nts IDs from the input nts_light are not present "
             "in the alphabet used in the previous scripts. List of absent IDs: {}"
             "  Please check carefully your input dictionary and rerun the script\n".format(d.removed()))
 
-    if args.nts_alphabet_heavy:
+    if args.nts_heavy:
 
         # Check the consistency of nucleotides alphabets between this scripts and the preceding ones for heavy atoms
-        df_heavy = read_excel_input(args.nts_alphabet_heavy)
+        df_heavy = read_excel_input(args.nts_heavy)
 
         d = DictDiffer(read_csv(), dict(zip(df_heavy.ID, df_heavy.ID_ext)))
 
         if len(d.changed()) != 0:
             print(
-                "WARNING! One or more nts IDs from the input nts_alphabet_heavy have different ID_ext compared "
+                "WARNING! One or more nts IDs from the input nts_heavy have different ID_ext compared "
                 "to the alphabet used in the previous scripts. List of IDs with differences: {}"
                 "  Please check carefully your input dictionary and rerun the script\n".format(d.changed()))
 
         if len(d.added()) != 0:
             print(
-                "WARNING! One or more nts IDs from the input nts_alphabet_heavy are missing compared "
+                "WARNING! One or more nts IDs from the input nts_heavy are missing compared "
                 "to the alphabet used in the previous scripts. List of missing IDs: {}"
                 "  Please check carefully your input dictionary and rerun the script\n".format(d.added()))
 
         if len(d.removed()) != 0:
             print(
-                "WARNING! One or more nts IDs from the input nts_alphabet_heavy are not present "
+                "WARNING! One or more nts IDs from the input nts_heavy are not present "
                 "in the alphabet used in the previous scripts. List of absent IDs: {}"
                 "  Please check carefully your input dictionary and rerun the script\n".format(d.removed()))
 
@@ -235,9 +235,9 @@ def read_csv(input_csv='nts_light.csv'):
 
 def read_excel_input(nts_file):
     """
-    Generate a dataframe with all the info on the nucleotides from the input file nts_alphabet_light
+    Generate a dataframe with all the info on the nucleotides from the input file nts_light
     """
-    # Checking that the nts_alphabet_light file given in argument exists
+    # Checking that the nts_light file given in argument exists
     if not os.path.exists(nts_file):
         print("ERROR! File {} does not exist. Execution terminated without generating any output".format(nts_file))
         sys.exit(1)
@@ -394,13 +394,13 @@ def add_masses(line, mass_light, mass_heavy):
     return new_line
 
 
-def lines_final(input_lines, mzlow, mzhigh, nts_light=nts_mass(read_excel_input(args.nts_alphabet_light))[0]):
+def lines_final(input_lines, mzlow, mzhigh, nts_light=nts_mass(read_excel_input(args.nts_light))[0]):
     """
     Prepare the final output lines
     """
     output_lines = []
-    if args.nts_alphabet_heavy:
-        nts_heavy = nts_mass(read_excel_input(args.nts_alphabet_heavy))[0]
+    if args.nts_heavy:
+        nts_heavy = nts_mass(read_excel_input(args.nts_heavy))[0]
     else:
         nts_heavy = nts_light
 
@@ -452,7 +452,7 @@ def lines_final(input_lines, mzlow, mzhigh, nts_light=nts_mass(read_excel_input(
 
         # Add the line to the list only if its light mass is > mzlow and < mzhigh
         if mzlow < l_mass < mzhigh:
-            if args.nts_alphabet_heavy:
+            if args.nts_heavy:
                 output_lines.append(add_masses(line, l_mass, h_mass))
 
             else:
@@ -475,10 +475,10 @@ def header_info_MS1(input_file):
 
     header_lines.append("#MZLOW_MS1 " + str(args.MS1_mzlow) + "\n")
     header_lines.append("#MZHIGH_MS1 " + str(args.MS1_mzhigh) + "\n")
-    header_lines.append("#NTS_LIGHT " + str(args.nts_alphabet_light) + "\n")
+    header_lines.append("#NTS_LIGHT " + str(args.nts_light) + "\n")
 
-    if args.nts_alphabet_heavy:
-        header_lines.append("#NTS_HEAVY " + str(args.nts_alphabet_heavy) + "\n")
+    if args.nts_heavy:
+        header_lines.append("#NTS_HEAVY " + str(args.nts_heavy) + "\n")
 
     for line in input_file:
 
@@ -539,7 +539,7 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
 
 
     def fragment_MS2_masses(line, MS2_charge_dic, nts_dic_heavy,
-                            nts_dic_light=nts_mass(read_excel_input(args.nts_alphabet_light))[0]):
+                            nts_dic_light=nts_mass(read_excel_input(args.nts_light))[0]):
         """
         Calculate the masses of all the fragments filtered for MS2 analysis
         """
@@ -945,8 +945,8 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
         global tot_decoys
         tot_decoys = 0
 
-        if args.nts_alphabet_heavy:
-            nts_dic_heavy = nts_mass(read_excel_input(args.nts_alphabet_heavy))[0]
+        if args.nts_heavy:
+            nts_dic_heavy = nts_mass(read_excel_input(args.nts_heavy))[0]
         else:
             nts_dic_heavy = {}
 
@@ -990,10 +990,10 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
         header_lines.append("#MZHIGH_MS2 " + str(args.MS2_mzhigh) + "\n")
         header_lines.append("#MZLOW_MS1 " + str(args.MS1_mzlow) + "\n")
         header_lines.append("#MZHIGH_MS1 " + str(args.MS1_mzhigh) + "\n")
-        header_lines.append("#ELEMENTAL_COMPOSITION_LIGHT " + str(args.nts_alphabet_light) + "\n")
+        header_lines.append("#ELEMENTAL_COMPOSITION_LIGHT " + str(args.nts_light) + "\n")
 
-        if args.nts_alphabet_heavy:
-            header_lines.append("#ELEMENTAL_COMPOSITION_HEAVY " + str(args.nts_alphabet_heavy) + "\n")
+        if args.nts_heavy:
+            header_lines.append("#ELEMENTAL_COMPOSITION_HEAVY " + str(args.nts_heavy) + "\n")
 
         header_lines.append("#SEQX_CONSOLIDATION " + str(args.mz_consolidation) + "\n")
 
@@ -1005,9 +1005,9 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
 
 
     # Create two new dictionaries for a-B fragments (nucleobases)
-    nts_dic_onlyB_light = nts_mass(read_excel_input(args.nts_alphabet_light))[1]
-    if args.nts_alphabet_heavy:
-        nts_dic_onlyB_heavy = nts_mass(read_excel_input(args.nts_alphabet_heavy))[1]
+    nts_dic_onlyB_light = nts_mass(read_excel_input(args.nts_light))[1]
+    if args.nts_heavy:
+        nts_dic_onlyB_heavy = nts_mass(read_excel_input(args.nts_heavy))[1]
 
     lines_MS2 = []
 
@@ -1022,7 +1022,7 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
                 lines_MS2.append("{} {} {} {} {} {}".format(split[0], 'light', " ".join(split[2:9]), split[10],
                                                             split[9], " ".join(split[11:])))
 
-            if args.nts_alphabet_heavy:
+            if args.nts_heavy:
                 if args.MS1_mzhigh >= np.float64(split[1]) >= args.MS1_mzlow:
                     lines_MS2.append("{} {} {} {} {} {}".format(split[1], 'heavy', " ".join(split[2:9]),
                                                                 split[10], split[9], " ".join(split[11:])))
@@ -1066,15 +1066,15 @@ else:
 # m/z based consolidation, where nucleotides that in a particular alphabet are too close
 # in masses ppm to be indistinguishable in the matching, are reported as 'X' within their sequence
 if args.mz_consolidation == 'y':
-    digest_lines = ct.mz_consolidate(args.nts_alphabet_light, f'Digest_{input_sequence}.txt', 'light', args.MS1_ppm_consolidation,
+    digest_lines = ct.mz_consolidate(args.nts_light, f'Digest_{input_sequence}.txt', 'light', args.MS1_ppm_consolidation,
                                      args.MS2_ppm_consolidation, read_csv())
     if digest_lines:
         open('test_consolidate.txt', 'w').writelines(digest_lines)
         os.remove(os.getcwd() + f'/Digest_{input_sequence}.txt')
         move(os.getcwd() + '/test_consolidate.txt', os.getcwd() + f'/Digest_{input_sequence}.txt')
 
-    if args.nts_alphabet_heavy:
-        digest_lines = ct.mz_consolidate(args.nts_alphabet_heavy, f'Digest_{input_sequence}.txt', 'heavy',
+    if args.nts_heavy:
+        digest_lines = ct.mz_consolidate(args.nts_heavy, f'Digest_{input_sequence}.txt', 'heavy',
                                          args.MS1_ppm_consolidation,
                                          args.MS2_ppm_consolidation, read_csv())
 
@@ -1087,8 +1087,8 @@ if args.mz_consolidation == 'y':
 else:
     # Check if any combination of two nucleotides in the alphabet(s)
     # provided has masses within 0.5 Dalton, warning the user and asking to run consolidation
-    ct.check_Da_nucleotides(args.nts_alphabet_light)
-    if args.nts_alphabet_heavy:
-        ct.check_Da_nucleotides(args.nts_alphabet_heavy)
+    ct.check_Da_nucleotides(args.nts_light)
+    if args.nts_heavy:
+        ct.check_Da_nucleotides(args.nts_heavy)
 
 print("Done! Output file(s) -> {}".format(" ".join(out_files)))

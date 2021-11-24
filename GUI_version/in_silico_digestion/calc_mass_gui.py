@@ -74,19 +74,19 @@ class Masses:
 
         if len(d.changed()) != 0:
             print(
-                "WARNING! One or more nts IDs from the input nts_alphabet_light have different ID_ext compared "
+                "WARNING! One or more nts IDs from the input nts_light have different ID_ext compared "
                 "to the alphabet used in the previous scripts. List of IDs with differences: {}"
                 "  Please check carefully your input dictionary and rerun the script\n".format(d.changed()))
 
         if len(d.added()) != 0:
             print(
-                "WARNING! One or more nts IDs from the input nts_alphabet_light are missing compared "
+                "WARNING! One or more nts IDs from the input nts_light are missing compared "
                 "to the alphabet used in the previous scripts. List of missing IDs: {}"
                 "  Please check carefully your input dictionary and rerun the script\n".format(d.added()))
 
         if len(d.removed()) != 0:
             print(
-                "WARNING! One or more nts IDs from the input nts_alphabet_light are not present "
+                "WARNING! One or more nts IDs from the input nts_light are not present "
                 "in the alphabet used in the previous scripts. List of absent IDs: {}"
                 "  Please check carefully your input dictionary and rerun the script\n".format(d.removed()))
 
@@ -100,27 +100,27 @@ class Masses:
 
             if len(d.changed()) != 0:
                 print(
-                    "WARNING! One or more nts IDs from the input nts_alphabet_heavy have different ID_ext compared "
+                    "WARNING! One or more nts IDs from the input nts_heavy have different ID_ext compared "
                     "to the alphabet used in the previous scripts. List of IDs with differences: {}"
                     "  Please check carefully your input dictionary and rerun the script\n".format(d.changed()))
 
             if len(d.added()) != 0:
                 print(
-                    "WARNING! One or more nts IDs from the input nts_alphabet_heavy are missing compared "
+                    "WARNING! One or more nts IDs from the input nts_heavy are missing compared "
                     "to the alphabet used in the previous scripts. List of missing IDs: {}"
                     "  Please check carefully your input dictionary and rerun the script\n".format(d.added()))
 
             if len(d.removed()) != 0:
                 print(
-                    "WARNING! One or more nts IDs from the input nts_alphabet_heavy are not present "
+                    "WARNING! One or more nts IDs from the input nts_heavy are not present "
                     "in the alphabet used in the previous scripts. List of absent IDs: {}"
                     "  Please check carefully your input dictionary and rerun the script\n".format(d.removed()))
 
     def read_excel_input(self, input_alphabet):
         """
-        Generate a dataframe with all the info on the nucleotides from the input file nts_alphabet_light
+        Generate a dataframe with all the info on the nucleotides from the input file nts_light
         """
-        # Checking that the nts_alphabet_light file given in argument exists
+        # Checking that the nts_light file given in argument exists
         if not os.path.exists(input_alphabet):
             print("ERROR! File {} does not exist. Execution terminated without generating any output".format(
                 input_alphabet))
