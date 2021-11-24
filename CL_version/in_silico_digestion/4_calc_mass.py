@@ -969,15 +969,20 @@ if os.path.exists(os.getcwd() + "/output.3.MS2"):
         """
         Create the header for the output file
         """
-        header_lines = []
+        header_lines, min_length = [], None
 
         for line in input_file:
 
-            if line[0] == "#" and "#MIN_LENGTH" not in line:
+            if line[0] == "#" and "MIN_LENGTH" not in line:
                 header_lines.append(line)
                 if '#INPUT_SEQUENCE' in line:
                     global input_sequence
                     input_sequence = line.split()[1].split(".fasta")[0]
+            if "#MIN_LENGTH" in line:
+                min_length = line
+
+        if min_length:
+            header_lines.append(min_length)
 
         if args.ion_mode == "+":
             header_lines.append("#ION_MODE positive\n")
