@@ -103,7 +103,7 @@ To transfer files between the Docker container and the host, use the following
 
 
 ## Demo: running an analysis on the Pytheas training set (RNA oligomers)
-After the installation of Pytheas and all the dependencies, the training set output files can be reproduced by running the following steps.
+After the installation of Pytheas and all the dependencies, the training set output files can be reproduced by running the following steps. All three steps of this simple demo can be run in a few minutes on an average laptop or desktop computer. 
 
 ###1. in silico digestion
 Within the GUI_version/in_silico_digestion directory, the digest file can be obtained by running 
