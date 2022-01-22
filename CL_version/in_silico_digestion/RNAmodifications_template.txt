@@ -1,0 +1,18 @@
+# template file for specifying positions of modified nucleotides in the input RNA sequences  
+# use one line per modification position
+# five fields separated with a space: Molecule Position ID ID_ext Include
+# 1) Molecule: fasta header of the RNA sequence until the first space 
+#   (e.g. fasta header ">16S.rrsA E.coli" will be "16S.rrsA")
+# 2) Position: sequence position of the modified nucleotide
+# 3) ID: one-letter Pytheas ID for the modified nucleotides. should be consistent with IDs 
+#   used in the elemental composition input files (default is nts_light.xlsx)
+#4) Id_ext: human-readable code for the modified nucleotides, consistent with ID_exts 
+#   used in the elemental composition input files (default is nts_light.xlsx)
+#5) Include: set to 0,1 or 2. keep only modified RNA [1], 
+#   keep both modified and unmodified [2], keep only unmodified [0]    
+
+Molecule Position ID ID_ext Include
+16S.rrsA 967 k [mC] 2
+16S.rrsA 1207 j [mG] 2
+23S.rrlA 2503 i [mA] 2
+23S.rrlA 2552 L [Um] 2

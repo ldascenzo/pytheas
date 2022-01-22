@@ -1,0 +1,8 @@
+# template file for specifying custom cleavage site/sites in the input RNA dequences
+# insert one cleaving site per line
+# The cleaved phosphodiester bond is highlighted with an asterisk (*)
+# Nucleotide one letter code is supported: Y (C or U), R (A or G) and N (C,U,A or G)
+# In the example below, RNA sequence will be cleaved (3' of G) AND (between C and A) AND (5' of CA or CG)  
+G*
+C*A
+*CR

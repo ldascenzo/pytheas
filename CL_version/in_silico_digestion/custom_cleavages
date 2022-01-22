@@ -1,7 +1,0 @@
-# Custom enzyme cleavage specificity
-# Please insert one cleaving site per line
-# The cleaved phosphodiester bond is highlighted with an asterisk (*)
-# Nucleotide one letter code is supported: Y (C or U), R (A or G) and N (C,U,A or G)
-G*
-C*A
-*CR
