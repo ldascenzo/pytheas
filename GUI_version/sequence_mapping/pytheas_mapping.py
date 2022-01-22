@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Last update: April 2021
+Last update: January 2022
 Author: Luigi D'Ascenzo, PhD - The Scripps Research Institute, La Jolla (CA)
 Contact info: dascenzoluigi@gmail.com
 GitHub project repository: https://github.com/ldascenzo/pytheas

@@ -70,7 +70,7 @@ def parse_match_file():
     """
     d = {'m/z': [], 'RT': [], 'm/z_RT': [], 'MS1_offset(ppm)': [], 'isotopologue match': [], 'length': [], "5'-end": [],
          'sequence': [], "3'-end": [], 'charge': [], 'isotope': [], 'Rank': [], 'Score (Sp)': [], 'dSp': [],
-         'n/L': [], 'sequence_mods': [], 'molecule ID': [], 'molecule_location': [],
+         'n/L': [], 'sequence_mods': [], 'molecule ID': [], 'sequence_location': [],
          'residue_start(unique)': [], 'residue_end(unique)': [], 'modifications_positions': []}
 
     sequences_with_x = []
@@ -141,7 +141,7 @@ def parse_match_file():
                         d['Rank'].append(sp[6].split('=')[1])
                         d['RT'].append(rt), d['Score (Sp)'].append(score), d['dSp'].append(dSp),
                         d['charge'].append(sp[10]), d['isotope'].append(sp[8]),
-                        d['molecule_location'].append(sp[15]), d['sequence'].append(seq),
+                        d['sequence_location'].append(sp[15]), d['sequence'].append(seq),
                         d['sequence_mods'].append(sp[12]), d["5'-end"].append(sp[13]), d["3'-end"].append(sp[14]),
                         d['MS1_offset(ppm)'].append(sp[3].split('p')[0]), d['length'].append(len(seq)),
                         d['n/L'].append(round(int(sp[-1].split(';')[1].split('=')[1]) /
@@ -273,7 +273,7 @@ def compute_dSp2(df_match, df_filtered):
     output_df = pd.merge(df_filtered, dup_df, on='m/z_RT', how='outer')
     output_df = output_df[['m/z', 'RT', 'MS1_offset(ppm)', 'isotopologue match', 'length',
                            "5'-end", 'sequence', "3'-end", 'charge', 'isotope', 'Rank', 'Score (Sp)',
-                           'dSp', 'dSp2', 'n/L', 'sequence_mods', 'molecule ID', 'molecule_location',
+                           'dSp', 'dSp2', 'n/L', 'sequence_mods', 'molecule ID', 'sequence_location',
                            'residue_start(unique)', 'residue_end(unique)', 'modifications_positions']]
 
     return output_df
