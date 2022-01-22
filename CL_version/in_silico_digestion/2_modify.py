@@ -184,9 +184,14 @@ def mod_0_1_2_mode(profile_mod, input_lines, mod_alphabet):
                         if "@" in split[-1]:
                             s = split[1]
 
-                            for a in mod_alphabet:
-                                s = s.replace(a, mod_alphabet[a])
-                            split[-1] = s + "@" * split[-1].count('@') + "@"
+                            outseq = ''
+                            for nt in s:
+                                if nt == 'A' or nt == 'C' or nt == 'G' or nt == 'U':
+                                    outseq += nt
+                                else:
+                                    outseq += mod_alphabet[nt]
+
+                            split[-1] = outseq + "@" * split[-1].count('@') + "@"
 
                         else:
                             s[int(modline.split()[1]) - int(split[2])] = mod_alphabet[modline.split()[2]]
