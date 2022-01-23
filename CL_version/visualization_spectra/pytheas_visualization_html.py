@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Last update: April 2021
+Last update: January 2022
 Author: Luigi D'Ascenzo, PhD - The Scripps Research Institute, La Jolla (CA)
 Contact info: dascenzoluigi@gmail.com
 GitHub project repository: https://github.com/ldascenzo/pytheas
@@ -49,6 +49,7 @@ import pyteomics.mgf as pymgf
 from datetime import datetime
 import multiprocessing
 import shutil
+import copy
 
 time = datetime.now()
 
@@ -699,12 +700,15 @@ def scored_spectra(match):
                                  match[1]['charge'],
                                  molecule, resn))
 
-        ##### Annotation
+        # Annotation
         # Iterates among all the rows of the dataframe with m/z, intensities and ion
         texts = []
 
-        ### Steps to update the MS2 ions table with matches (to be moved into an independent function?)
+        # Create a copy of the digest table to avoid using the same reference of th_mass+sequence
+        # multiple times
+        unique_digest_table = copy.copy(dig_tab[match[1]['th_match'] + '_' + match[1]['sequence']])
 
+        # Steps to update the MS2 ions table with matches (to be moved into an independent function?)
         for index, i in enumerate(MS2_matches):
 
             if index <= limit_peaks:
@@ -718,22 +722,26 @@ def scored_spectra(match):
 
                     if i[3][0] == 'a' or i[3][0] == 'b' or i[3][0] == 'c' or i[3][0] == 'd':
 
-                        dig_tab[match[1]['th_match'] + '_' + match[1]['sequence']].loc[
+                        unique_digest_table.loc[
                             int(m.group()) - 1, ion_series] = str(round(np.float64(i[2]), 4)) + '_' + i[3][0] + 'clr'
 
                     else:
-                        dig_tab[match[1]['th_match'] + '_' + match[1]['sequence']].loc[
+                        unique_digest_table.loc[
                             len(match[1]['sequence']) - int(m.group()), ion_series] = str(
                             round(np.float64(i[2]), 4)) + '_' + i[3][0] + 'clr'
 
                 # Add the labels to matching cells in the output table for free bases and losses, changing
                 # the value with the theoretical  m/z
                 if re.search(r'^(?![abcdzyxw])', i[3].split("(")[0].split('-')[0]):
-                    dig_tab[match[1]['th_match'] + '_' + match[1]['sequence']].loc[0, i[3]] = str(
+                    unique_digest_table.loc[0, i[3]] = str(
                         round(np.float64(i[2]), 4)) + '_Mclr'
 
                 # Annotate each matching bar with info on ion + m/z, using a color based on the ion series it belongs
                 prec_fl = np.float64(i[0])
+
+                # Correct for some approximation issues
+                if input_mgf[key_mgf].loc[input_mgf[key_mgf]['m/z'] == prec_fl].empty:
+                    prec_fl += 0.000001
 
                 # Make sure the precursor ion is in the MS2 matches m/z values to avoid errors
                 if not input_mgf[key_mgf].loc[input_mgf[key_mgf]['m/z'] == prec_fl].empty and np.float64(
@@ -791,9 +799,9 @@ def scored_spectra(match):
 
         # Creates the tabled for the final output from the pandas dataframes, separating ion series from losses and
         # free bases
-        df_ions = dig_tab[match[1]['th_match'] + '_' + match[1]['sequence']].filter(regex='^[abcdzyxw]').set_index(
+        df_ions = unique_digest_table.filter(regex='^[abcdzyxw]').set_index(
             keys=np.array(list(match[1]['sequence'])))
-        df_losses = dig_tab[match[1]['th_match'] + '_' + match[1]['sequence']].filter(regex='^(?![abcdzyxw])').iloc[[0]]
+        df_losses = unique_digest_table.filter(regex='^(?![abcdzyxw])').iloc[[0]]
 
         # Order the columns alphabetically based on the header row
         df_ions = df_ions.reindex(sorted(df_ions.columns), axis=1)
