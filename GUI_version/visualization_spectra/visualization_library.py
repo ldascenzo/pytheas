@@ -484,7 +484,6 @@ class Visualize:
             for index, i in enumerate(MS2_matches):
 
                 if index <= limit_peaks:
-                    print(i)
                     # Add the labels to matching cells in the output table with corresponding series, changing
                     # the value with the theoretical  m/z
                     m = re.search(r'\d+$', i[3].split("(")[0].split('-')[0])
@@ -520,7 +519,6 @@ class Visualize:
                     # Make sure the precursor ion is in the MS2 matches m/z values to avoid errors
                     if not input_mgf[key_mgf].loc[input_mgf[key_mgf]['m/z'] == prec_fl].empty \
                             and x_max > np.float64(i[0]) > x_min:
-                        print('annotation')
                         y_lim_annotation = int(
                             input_mgf[key_mgf].loc[input_mgf[key_mgf]['m/z'] == prec_fl, 'intensity'].iloc[0])
 
