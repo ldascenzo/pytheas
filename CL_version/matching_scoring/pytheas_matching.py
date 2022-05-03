@@ -435,10 +435,11 @@ def consecutive_series_11(list_MS2, ion_series):
 
         # Add the support for a-b, y-P and z-P that have the number after the first character and not at the end
         if len(ion_series) == 1:
-            current, consecutive = ion_series + str(i), ion_series + str(i + 1)
+            current, consecutive = ion_series + str(i) + "(", ion_series + str(i + 1) + "("
 
         else:
-            current, consecutive = ion_series[0] + str(i) + ion_series[1:], ion_series[0] + str(i + 1) + ion_series[1:]
+            current, consecutive = ion_series[0] + str(i) + ion_series[1:] + "(", ion_series[0] + str(i + 1) + \
+                                   ion_series[1:] + "("
 
         if current in list_MS2 and consecutive in list_MS2:
             beta += args.beta_increment + (args.alpha * consec_flag) * args.beta_increment
