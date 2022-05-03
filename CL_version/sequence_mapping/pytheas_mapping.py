@@ -312,7 +312,7 @@ def consolidate_modifications(infile='mapping_output_temp.csv'):
     # df = pd.read_csv(infile, header = None, names = ['molecule' , 'nres' ,'mod', 'mod_ext', 'matches'] +
     # [' '] * (most_matches - 1))
     df = pd.read_csv(infile, header=None,
-                     names=['molecule', 'nres', 'mod', 'mod_ext', 'matches'] + list(range(1, most_matches - 1)))
+                     names=['molecule', 'nres', 'mod', 'mod_ext', 'matches'] + list(range(1, most_matches)))
 
     # Find the occurrences of nres_molecule with duplicated matches
     duplicated_nres = (df[df.duplicated(['molecule', 'nres'], keep=False)]['nres'] + "_" +
@@ -378,7 +378,7 @@ def transpose_df(infile):
 
     # Old syntax, works with older versions of matplotlib
     df = pd.read_csv(infile, header=None,
-                     names=['molecule', 'nres', 'mod', 'mod_ext', 'matches'] + list(range(1, most_matches - 1)))
+                     names=['molecule', 'nres', 'mod', 'mod_ext', 'matches'] + list(range(1, most_matches)))
 
     # Create separate dataframes for fragments belonging to different molecules
     molecules = df['molecule'].unique().tolist()[1:]
