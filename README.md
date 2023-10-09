@@ -59,7 +59,7 @@ The Anaconda installation described for the Windows version is the recommended w
 And calling the scripts using `pythonw` 
 
 ## Pulling Pytheas image through Docker
-### Windows 10
+### Windows 10/11
 Install [Docker Desktop](https://hub.docker.com/editions/community/docker-ce-desktop-windows)
 Open a Command Prompt (from the Start menu) and pull the Pytheas Docker image
 ```
@@ -74,7 +74,7 @@ docker pull ldascenzo/pytheas:latest
 ```
 
 ## Usage info for Linux, Windows, macOS and Docker versions
-### Windows 10
+### Windows 10/11
 Using an *Anaconda Powershell Prompt*, navigate to the local pytheas directory. If for example the directory is in C:\Users\MainUser\pytheas the command will be
 `cd C:\Users\MainUser\pytheas`
 
