@@ -9,13 +9,15 @@ Several instances of files and libraries needed for the execution of other scrip
 From the [GitHub repository](https://github.com/ldascenzo/pytheas) Pytheas can be downloaded either selecting the green “Code” button and choosing “Download ZIP” or cloning locally the git repository. The first option downloads a compressed directory with all the files, including the two GUI version and CL version main working directories. To clone the git repository, install git ([Windows instructions](https://git-scm.com/download/win)), then open a shell prompt (in Windows under *Start > Command Prompt*) and navigate into the desired directory for cloning Pytheas repository. Then, within this directory run `git clone https://github.com/ldascenzo/pytheas.git`
 This will create a *pytheas* directory at the chosen location, with all the files needed to run Pytheas.
 
-### Windows 10  
+### Windows 10/11
 Download the latest [Anaconda version](https://docs.anaconda.com/anaconda/install/) based on the Windows version in usage (by April 2021 it is *Python 3.8 Windows 64-bit Graphical Installer*).
 Install Anaconda leaving the standard options selected. 
 
 Open an Anaconda Powershell Prompt (*Start menu -> Anaconda Powershell Prompt*).
 Within the prompt install some Python packages needed for Pytheas execution.
 ```
+conda create -n pytheas-env python=3.10 -y
+conda activate pytheas-env
 conda install -y -c conda-forge gooey
 conda install -y -c conda-forge biopython
 conda install -y -c bioconda pyteomics
