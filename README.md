@@ -21,6 +21,8 @@ conda activate pytheas-env
 conda install -y -c conda-forge gooey
 conda install -y -c conda-forge biopython
 conda install -y -c bioconda pyteomics
+conda install -y -c anaconda openpyxl
+conda install -y numpy==1.23.1
 ```
 
 ### Linux (Ubuntu 20.04)
@@ -113,7 +115,7 @@ Within the GUI_version/in_silico_digestion directory, the digest file can be obt
 And changing the standard options for (all files are found within the Training_set directory):
 RNA_sequences = calibration_set_sequences.fasta 
 Enzyme = None
-Nucleotides_light = nts_alphabet_light_std.xlsx
+Nucleotides_light = nts_light.xlsx
 decoys = selected
 list_of_known_RNA_modifications = modfile_calibration_set.txt
 RNA_5end_chemistry = OH
