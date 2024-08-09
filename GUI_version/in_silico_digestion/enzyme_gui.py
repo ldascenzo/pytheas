@@ -69,7 +69,8 @@ class Enzyme_cleavage:
 
                     else:
                         unique_ids.append(seq.id)
-                        sequence = str(seq.seq.ungap("-"))
+                        gap = "-"
+                        sequence = str(seq.seq.replace(gap, ""))
                         sequences_dictionary[str(seq.id)] = sequence
                         seq_output.append(str(seq.id) + " " + sequence + "\n")
 
