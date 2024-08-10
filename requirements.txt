@@ -1,6 +1,6 @@
 # Each one of those requirements can be installed with pip3 install [package_name]
 Biopython 
-pandas>=1.4.0
+pandas==1.4.1
 lxml 
 numpy 
 matplotlib
