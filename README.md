@@ -24,6 +24,7 @@ conda install -y -c bioconda pyteomics
 conda install -y -c anaconda openpyxl
 conda install -y numpy==1.23.1
 conda install -y pandas==1.4.1
+conda install -y matplotlib==3.5.0
 ```
 
 ### Linux (Ubuntu 20.04)
