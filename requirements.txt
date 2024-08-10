@@ -2,8 +2,8 @@
 Biopython 
 pandas==1.4.1
 lxml 
-numpy 
-matplotlib
+numpy==1.23.1 
+matplotlib==3.5.0
 pyteomics
 # Later version of xlrd raise errors when executing the digest pipeline
 xlrd==1.2.0 
