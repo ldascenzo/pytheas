@@ -109,27 +109,27 @@ To transfer files between the Docker container and the host, use the following
 ## Demo: running an analysis on the Pytheas training set (RNA oligomers)
 After the installation of Pytheas and all the dependencies, the training set output files can be reproduced by running the following steps. All three steps of this simple demo can be run in a few minutes on an average laptop or desktop computer. 
 
-###1. in silico digestion
+### 1. in silico digestion
 Within the GUI_version/in_silico_digestion directory, the digest file can be obtained by running 
 ```python pytheas_insilico_digestion.py```
 And changing the standard options for (all files are found within the Training_set directory):
-RNA_sequences = calibration_set_sequences.fasta 
-Enzyme = None
-Nucleotides_light = nts_light.xlsx
-decoys = selected
-list_of_known_RNA_modifications = modfile_calibration_set.txt
-RNA_5end_chemistry = OH
-RNA_3end_chemistry = P
+- RNA_sequences = calibration_set_sequences.fasta 
+- Enzyme = None
+- Nucleotides_light = nts_light.xlsx
+- decoys = selected
+- list_of_known_RNA_modifications = modfile_calibration_set.txt
+- RNA_5end_chemistry = OH
+- RNA_3end_chemistry = P
 
-###2. Matching and scoring
+### 2. Matching and scoring
 Within the GUI_version/matching_scoring directory, the matching and scoring files can be obtained by running 
 ```python pytheas_matching_scoring.py```
 And changing the standard options for (all files except the digest are found within the Training_set directory):
-Theoretical_digest = digest file obtained from the previous step
-MS_data = calibration_set.mgf
-isotopic_species = light
+- Theoretical_digest = digest file obtained from the previous step
+- MS_data = calibration_set.mgf
+- isotopic_species = light
 
-###3. Final report
+### 3. Final report
 Within the GUI_version/final_report, the final_report can be obtained by running
 ```python pytheas_final_report.py```
 Using the matching file obtained in the previous step as Match_output
