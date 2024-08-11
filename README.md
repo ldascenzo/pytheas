@@ -18,13 +18,10 @@ Within the prompt install some Python packages needed for Pytheas execution.
 ```
 conda create -n pytheas-env python=3.10 -y
 conda activate pytheas-env
-conda install -y -c conda-forge gooey
-conda install -y -c conda-forge biopython
+conda install -y numpy==1.23.1 pandas==1.4.1 matplotlib==3.5.0
+conda install -y -c conda-forge gooey biopython
 conda install -y -c bioconda pyteomics
 conda install -y -c anaconda openpyxl
-conda install -y numpy==1.23.1
-conda install -y pandas==1.4.1
-conda install -y matplotlib==3.5.0
 ```
 
 ### Linux (Ubuntu 20.04)
